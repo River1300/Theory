@@ -226,3 +226,23 @@ void Infinite()
 이 프로그램을 실행하면 Stack Overflow 예외가 발생한다.
 함수가 호출될 때마다 호출스택( Call Stack )에 함수의 정보를 쌓아 올리는 방식이므로 준비한 스택을 넘쳐 버리게 됨
 */
+
+/* ----- < C/C++ 언어의 Compile 원리 > ----- */
+
+// left <- right : 기본적으로 C++ 언어는 오른쪽에서 왼쪽으로 해석된다.
+// a = b = 0 : b 에 먼저 0 을 대입한 후, a 에 b 를 대입하는 순서
+
+// const int a : a is int which is constant( a는 정수이며 상수형 )
+// int const a : a is constant int( a는 상수형 정수 )	=> 같은 의미
+
+// const int * a : a is pointer to int which is constant( a 는 포인터로 정수를 가리키며 그 정수는 상수 )
+// int * const b : b is constant pointer to int( b 는 상수 포인터로 정수를 가리킨다. )
+// int const * c : c is pointer to constant int( c 는 상ㅇ수 정수를 가리키는 포인터 )
+
+// *a = 1 : ERROR( a 가 가리키는 정수는 상수이므로 값을 변경할 수 없다. )
+// a++ : OK( a 는 일반 포인터이므로 이동 가능 )
+// *b = 1 : OK( b 는 일반 정수를 가리키므로 값을 변경할 수 있다. )
+// b++ : ERROR( b 는 상수 포인터이므로 이동 불가능 )
+// *c = 1 : ERROR( c 는 상수 정수를 가리키므로 값을 변경할 수 없다. )
+// c++ : OK( c 는 일반 포인터이므로 이동 가능 )
+// const int * 와 int const * 는 결국 같은 의미
