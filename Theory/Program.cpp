@@ -420,3 +420,114 @@ O(2^n) : 지수식 - 2의 지수 형태
 
 O(n!) : 팩토리얼
 */
+
+/* ----- < POD( Plain Old Data ) > ----- */
+
+// 단순한 메모리 구조를 가지는 객체 : C 언어에서 제공되는 타입들
+//		=> POD의 장점은 원본 메모리에서 다른 메모리로 복사나 이동이 매우 쉬워서 컴퓨터 성능에 큰 부담이 없다는 점이다.
+
+/*
+C++ 에서는 POD 를 다음과 같은 의미론( Semantic )으로 정의해 두었다.
+	Standard Layout Type( 표준 레이아웃 타입 ) : C 언어와 같은 레이아웃을 가지고 있다.
+	Trivial Type( 간단한 타입 ) : 사용자가 정의한 매우 간단한 자료 구조를 말한다.
+POD는 Tivial Type만 가능하며, 성능과 관련되어 있다.
+
+그런데 사용자가 클래스에 생성자를 붙이면 Trivial Type이 아니게 된다.
+
+#include <iostream>
+
+class ClassA
+{
+public:
+	ClassA() {}
+};
+class ClassB
+{
+public:
+	ClassB() = default;
+};
+int main()
+{
+	std::cout << std::is_trivial<ClassA>::value << std::is_pod<ClassA>::value << '\n';
+	std::cout << std::is_trivial<ClassB>::value << std::is_pod<ClassB>::value << '\n';
+}
+
+ClassA 는 사용자가 기본 생성자를 작성해 줬고, ClassB 는 = default 를 사용해 암시적 기본 생성자라는 것을 명확하게 표시하였다.
+POD가 되기 위해서는 = default 키워드로 암시적 기본 생성자를 명시해야된다.
+*/
+
+/* ----- < 무명 객체( Anonymous Object ) > ----- */
+
+/*
+#include <iostream>
+
+int Square(int x)
+{
+	return x * x;
+}
+int main()
+{
+	int x{ 2 };
+	std::cout<<Square(x)<<'\n';
+}
+
+return x * x; 일반 타입 역시 객체라고 생각해 보면, x * x를 담아 둘 수 있는 임시 객체가 필요하다.
+		=> 계산 결과를 저장한 다음 반환해야 하니 int temp = x * x; return temp; 와 같은 작업이 있어야 한다.
+컴파일러 내부에서는 이 작업이 이루어 진다. 임시로 사용하는 객체로 해당 코드 이외에는 사용할 필요가 없으므로, 굳이 변수명을 붙이지 않고 사용한다.
+		=> 이를 이름 없는 객체라 부른다.
+
+Square(x) 에서 x 가 리터럴 2로 치환
+인자 2가 Square(int x) 의 매개변수 x 에 복사
+x * x 를 무명객체에 저장
+무명 객체 반환 & 소멸
+
+반환값 이외에도 대부분의 연산식에서도 무명객체가 사용된다.
+*/
+
+/*
+class MyClass
+{
+public:
+	int mValue;
+	MyClass(int value) : mValue{ value }
+	{
+		std::cout<<"[MyClass()] : "
+			<< mValue
+			<< '\n';
+	}
+	MyClass operator+(const MyClass& c)
+	{
+		return MyClass{ mValue + c.mValue };
+	}
+};
+int Square(MyClass c)
+{
+	return c.mValue * c.mValue;
+}
+int main()
+{
+	MyClass c1{ 1 }, c2{ 2 };
+
+	std::cout<<"-----\n";
+	Square(c1 + c2);
+
+	std::cout<<"-----\n";
+	std::cout<<(c1 + c2).mValue<<'\n';
+
+	std::cout<<"-----\n";
+	MyClass c3{ c1 + c2 };
+}
+
+실행 결과
+[MyClass()] : 1
+[MyClass()] : 2
+-----
+[MyClass()] : 3
+-----
+[MyClass()] : 3
+3
+-----
+[MyClass()] : 3
+실제로 생성한 c1, c2 외에도 생성자가 추가로 불리었다. 이들은 무명 객체이다.
++ 연산자를 오버로딩한 코드에서 새로운 객체를 만들어서 반환
+*/
