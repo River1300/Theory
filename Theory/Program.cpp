@@ -246,3 +246,177 @@ void Infinite()
 // *c = 1 : ERROR( c 는 상수 정수를 가리키므로 값을 변경할 수 없다. )
 // c++ : OK( c 는 일반 포인터이므로 이동 가능 )
 // const int * 와 int const * 는 결국 같은 의미
+
+/* ----- < 성능 체크 > ----- */
+
+// 속도( Time ) : 얼마나 더 빨리 실행되는가
+// 메모리( Space ) : 얼마나 많은 메모리를 사용하는가
+
+/*
+#include <iostream>
+#include <chrono>
+
+using Comparison = bool (*)(int, int);
+
+오름차순 함수(int x, int y)
+내림차순 함수(int x, int y)
+
+void Sort(int numbers[], int count, Comparison f)
+{
+	int temp{};
+	for(int i=0;i<count;i++)
+	{
+		for(int j=i+1;j<count;j++)
+		{
+			if(f(numbers[i],numbers[j]))
+			{
+				temp = numbers[i];
+				numbers[i] = numbers[j];
+				nummbers[j]=temp;
+			}
+		}
+	}
+}
+int main()
+{
+	int scores[10]{20, 10, 40, 15, 30, 70, 60, 90, 80, 40};
+
+	auto startTime = std::chrono::system_clock::now();
+	Sort(scores, NumArray, Asscending);
+	auto endTime = std::chrono::system_clock::now();
+
+	auto duration = endTime - statTime;
+
+	std::cout<<"Sort() runds : "<<duration.count()<<"ms\n";
+}
+Sort() 함수를 실행하기 전에 컴퓨터의 현재 시간을 저장한 다음, 함수를 수행하고 다시 현재 시간을 저장하는 것
+이 두 시간의 차이를 구하면, Sort() 함수의 실행시간을 알 수 있다.
+하지만, 위 코드를 실행하면 실행할 때마다 다른 시간이 출력된다.
+*/
+
+// 실제로 시간 복잡도 측정은 다음과 같은 이유로 물리적으로 측정하기 어렵다.
+//	1. 매우 빠른 실행 단위 : 간단히 스탑워치 같은 것으로 해당 함수의 실행 시간을 측정해 볼 수 있겠지만 프로그램의 한 블럭은
+//		=> ms( 1/1000초 ) 단위로 매우 빠르게 실행되는 코드 뭉치들의 집합이므로 정확하게 측정하기 어렵다.
+//	2. 성능 차이 : 게임용 최상의 데스크탑과 문서 작업용 노트북에서 측정한 값으로 비교할 수도 없다.
+//	3. 환경 차이 : 동일한 성능의 PC를 가진 두 사용자가 있다고 가정, A 사용자는 엑셀 10개와 사이버펑크와 같은 무거운 게임을
+//		=> 실행 시켜둔 상태이고, B 사용자는 부팅을 방금 마친 상태다. 당연히 A 가 더 느릴 것
+
+/* Complexity */
+
+// 실제로 단위로 측정하는 것이 아니라 코드만을 가지고 정량을 구해볼 수 있다.
+
+/*
+#include <iostream>
+
+int Sum(int scores[], int count)
+{
+	int total{0};
+
+	for(int i=0;i<count;i++) total += scores[i];
+
+	return total;
+}
+int main()
+{
+	int socre[5]{20,10,40,5,30};
+	std::cout<<Sum(scores,5)<<'\n';
+}
+시간 복잡도 : 알고리즘의 시작 ~ 끝 까지 소요되는 시간을 분석, 시간을 층정하는 것은 컴퓨터에 따라 다를 수 있기 때문에 수행 횟수를 산출
+공간 복잡도 : 알고리즘 연산 도중에 사용되는 메모리를 분석, 바이트 단위로 측정하지 않고 주로 일반적인 단위로 산출
+
+시간 복잡도 구하기
+	=> 코드의 각 문장을 횟수 1 로 보고 카운트, Sum의 성능은 코드 2줄 + 반복문 count(n)
+공간 복잡도 구하기
+	=> 공간은 해당 함수가 얼마나 많은 메모리를 사용하느냐에 따라 결정되므로 바이트 크기와는 상관없이 변수의 개수를 카운트
+	=> 함수의 매개변수로 주어지는 값은 무시 Sum의 변수 2개
+*/
+
+/*
+void Sort(int numbers[], int count, Comparison f)
+{
+	int temp{};
+	for(int i = 0; i < count; i++)
+	{
+		for(int j = i + 1; j < count; j++)
+		{
+			if(f(numbers[i], numbers[j]))
+			{
+				temp = numbers[i];
+				numbers[i] = numbers[j];
+				nummbers[j] = temp;
+			}
+		}
+	}
+}
+시간 복잡도 : 반복문 N * N, 반복문 안에 있는 if 문 4줄 N의 제곱 X 4 = 4n^2
+공간 복잡도 : 3
+
+T(f(n)) = 4n^2
+n=1 : 4 * 1 = 4
+n=2 : 4 * 4 = 16
+n=3 : 4 * 9 = 36
+n=4 : 4 * 16 = 64
+n의 크기에 따라 시간 복잡도가 급증한다.
+*/
+
+/* Big O 표기법 */
+
+// n 개의 데이터를 처리하는데 A 의 코드는 n, B 의 코드는 n^2 이런 식으로 정량화한 다음 비교하면 A가 더 좋은 방법임을 알 수 있다.
+
+// 구체적인 측정 단위( second, ms 혹은 byte, KByte )를 사용하지 않고 추상적으로 코드의 성능을 표기
+// 시간이나 공간이 얼마나 늘어나느냐에 초점을 맞춘다.
+// 최악의 경우를 가정한다.
+
+// 곱하기 : 변수를 제외한 상수는 무시
+// 더하기 : 가장 높은 차수만 고려
+// 다양한 값이 반복되는 경우 : 최악의 경우 선택
+
+/*
+T(f(n)) = n + 2 : O(n) 상수 2는 무시, 상수는 n0으로 볼 수 있다. 따라서 가장 높은 차수 n만 남는다.
+
+S(f(n)) = 2 : O(1) 가장 높은 차수를 가진 것만 남겨야 하는데 이미 상수, 이 경우는 1로 변경, 이런 형태를 상수 시간이라 한다.
+
+T(f(n)) = 4n^2 : O(n^2) 곱하기에 사용된 4와 같은 상수 역시 버린다.
+
+S(n) = 3 : O(1)
+*/
+
+/* 재귀함수에서의 복잡도 */
+
+/*
+#include <iostream>
+
+void CountDown(int n)
+{
+	if(n==0)
+	{
+		std::cout<<"Fire!\n";
+		return;
+	}
+	std::cout<<n<<'\n';
+	CountDown(n - 1);
+}
+시간 복잡도 : 함수 내부에서는 기본적으로 모두 상수라서 무시된다. 중요한 것은 재귀호출이 몇 번 불리느냐이다.
+		=> n 으로 시작하면 n, n - 1, n - 2, ... 0 까지 총 n 번 이다. O(n)
+공간 복잡도 : 재귀호출은 매 호출마다 Call Stack에 하나씩 프레임이 쌓이는 형태,
+		=> 메모리에 그대로 남아 있는 상태, 즉 이 경우가 가장 메모리를 많이 차지하는 상황이 되므로 Stack Frame을 계산해 줘야 한다.
+		=> n 번 재귀호출이 발생하므로 상수 무시하면 n이 된다. O(n)
+*/
+
+/* Big O 패턴 */
+
+/*
+O(1) : 상수 - 가장 빠른 알고리즘, 입력과 상관 없이 상수 시간만 소요
+
+O(log n) : 로그식 - 큰 값을 일정한 크기의 영역으로 쪼개서 계산하는 경우에 해당, 바이너리 검색
+
+O(n) : 선형 - 지수가 1이라 1차라고 한다. for, while과 같은 단순 반복문
+
+O(n log n) : 선형 로그 - 큰 값을 일정한 크기의 영역으로 쪼개서 계산한 후 다시 하나로 조립, 큌, 머지
+
+O(n^2) : 2차 다형식 - 지수가 2중 for, while
+
+O(2^n) : 지수식 - 2의 지수 형태
+
+O(n!) : 팩토리얼
+*/
