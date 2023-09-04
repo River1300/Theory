@@ -363,3 +363,128 @@ rdstate() : read error state flag 의 약자로 오류 상태 플래그 모두 가져 온다.
 //	CreateFromFile("Data/SimpleData.txt", monsterList);
 //}
 
+/* ----- < 바이너리 데이터 > ----- */
+
+// 보안에서 가장 쉽게 처리하는 것이 바이너리 데이터이다. 이 데이터는 컴퓨터 메모리에 저장되어 있는 그대로 파일로 기록하는 것이며
+// 이러한 방식이 바이너리 모드이다. 위에서 언급한 대로 스트림 객체를 만들 때 모드를 binary로 지정해 주면 된다.
+
+/* 바이너리 데이터 읽기/쓰기 */
+
+// 바이너리 데이터를 읽거나 쓰기 위해서는 char* 로 변환을 하는 것이 기본이다. 즉, 데이터를 char 배열로 만들어 바이트의 집합으로 사용하는 것이다.
+
+/*
+바이너리 데이터에 대한 멤버 함수
+
+ostream& ostream::write( char* s, streamsize n ); s가 가르키는 문자 배열의 n개를 스트림에 기록한다.
+istream& istream::read( char* s, streamsize n ); s가 가르키는 문자 배열에 스트림에서 n개의 값을 읽어 온다.
+
+바이너리 모드에서 작업할 때는 주의해야 할 것이 있다.
+마지막 줄 엔터를 만날 때 까지가 데이터 집합이라는 것을 명확히 알 수 있다. 하지만 바이너리 데이터는 단순히 바이너리 집합으로만
+되어 있기 때문에 데이터 집합이 어디 까지인지 알 수 없다. 각 집합에 대한 구분자로 특별한 기호를 사용할 수는 있겠지만,
+항목이 많아지면 당연히 부담이 된다.
+따라서 파일 가장 앞부분에 현재 데이터가 몇 개인지 저장해 두는 것이 좋다. 이러한 것들을 가장 앞의 데이터라고 해서 header라고
+많이 부른다. 파일 헤더는 주로 원소의 개수, 해당 파일의 관리를 위해 버전을 명시하는 것이 일반적이다.
+*/
+
+/*
+바이너리 문자열 저장/읽기
+
+JELLY 는 5글자이지만 WOLF 는 4글자 이다. 텍스트는 쉼표로 구분되어 읽을 수 있었지만 바이너리는 구분자가 없다. 따라서 문자열을
+저장할 때는 문자열의 길이를 같이 저장하는 것이 일반적이다.
+*/
+
+//struct Header
+//{
+//	int version{ 1 };
+//	int itemCount{};
+//};
+
+// 이러한 것을 데이터 구조상 POD( Plain Old Data )라 하며, 객체가 아닌 단순한 값의 집합으로 된 데이터 구조이다.
+// 위와 같은 형태는 메모리 상에서 연속적인 바이트 배열로 표기할 수 있기 때문에 한 묶음( chunk )으로 입출력이 가능하다.
+
+/*
+POD의 특성
+
+표준 레이아웃 타입 : 객체 지향의 특성을 가지지 않는다.
+	다형성이 아니다. ( 가상 함수 및 가상 기반 클래스 )
+	참조형 멤버가 없다.
+	멤버가 동일한 접근 제어자를 가진다.
+간단한 타입 : 비트 단위 연산이 가능한 단순한 타입이다.
+	간단한 기본 생성자/소멸자
+	간단한 복사/이동 연산
+
+단순히 struct 에 편의상 생성자 정도만 허용되는 타입이라 보면 된다.
+*/
+
+#include <iostream>
+#include <vector>
+#include <fstream>
+#include "Monster.h"
+struct Header
+{
+	int version{ 1 };
+	int itemCount{};
+};
+bool SaveToFile(const char* filename, std::vector<Monster>& monsters)
+{
+	std::ofstream ostream;
+	ostream.exceptions(std::ofstream::badbit | std::ofstream::failbit);
+	try
+	{
+		ostream.open(filename, std::ofstream::binary);
+
+		// Header 데이터는 POD 이므로 한 번에 일기/쓰기가 가능하다. write나 read는 char* 를 매개변수로 받아들이기 때문에,
+		// &header 즉 header 구조체의 주소를 char* 로 변경하는 것이다.
+		Header header{ 1,static_cast<int>(monsters.size()) };
+		ostream.write(reinterpret_cast<char*>(&header), sizeof(Header));
+
+		for (auto item : monsters)
+		{
+			ostream << item;
+		}
+		ostream.close();
+	}
+	catch (std::ofstream::failure e)
+	{
+		std::cerr << "파일 저장 중에 예외가 발생했습니다\n" <<
+			e.what() << '\n';
+		ostream.close();
+		return false;
+	}
+	return true;
+}
+bool LoadFromFile(const char* filename, std::vector<Monster>& monsters)
+{
+	std::ifstream istream;
+	istream.exceptions(std::ifstream::badbit | std::ifstream::failbit);
+	try
+	{
+		istream.open(filename, std::ifstream::binary);
+		Header header;
+		istream.read(reinterpret_cast<char*>(&header), sizeof(Header));
+		for (int i = 0; i < header.itemCount; i++)
+		{
+			Monster monster;
+			istream >> monster;
+			monsters.push_back(monster);
+		}
+		istream.close();
+	}
+	catch (std::ifstream::failure e)
+	{
+		std::cerr << "파일 저장 중에 예외가 발생했습니다.\n" << e.what() << '\n';
+		istream.close();
+		return false;
+	}
+	return true;
+}
+int main()
+{
+	std::vector<Monster> monsterList;
+	monsterList.push_back(Monster{ "JELLY",1,1,1 });
+	monsterList.push_back(Monster{ "WOLF",5,5,5 });
+	monsterList.push_back(Monster{ "DEMON",10,10,10 });
+	SaveToFile("Data/SimpleData.dat", monsterList);
+	monsterList.clear();
+	LoadFromFile("Data/SimpleData.dat", monsterList);
+}
