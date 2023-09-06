@@ -268,10 +268,24 @@ rdstate() : read error state flag 의 약자로 오류 상태 플래그 모두 가져 온다.
 /* 사용자 정의 연산자 */
 
 //#include <iostream>
-//#include <fstream>
 //#include <vector>
+//
+//#include <fstream>
+///*
+//<fstream> 헤더 파일은 파일 입출력(File In/Out) 관련 기능을 제공한다.
+//ifstream( 파일 입력 스트림 ), ofstream( 파일 출력 스트림 ), 그리고 fstream( 파일 입출력 스트림 )이 있다.
+//파일을 열고 닫고, 파일로부터 데이터를 읽고 쓰는 등의 파일 관련 작업을 수행할 때 사용된다.
+//*/
+//
 //#include <sstream>
-//class Monster
+///*
+//<sstream> 헤더 파일은 문자열 스트림을 다루는 기능을 제공한다.
+//istringstream( 입력 문자열 스트림 ), ostringstream( 출력 문자열 스트림 ), 그리고 stringstream( 입출력 문자열 스트림 )이 있다.
+//문자열을 스트림으로 변환하거나, 스트림에서 문자열을 추출하는 등의 문자열 처리 작업에 사용된다.
+//일반적으로 문자열을 파싱하거나 특정 형식으로 포맷하는 데 사용된다.
+//*/
+//
+//class Monster	// Monster 객체를 효과적으로 생성하고 파일 입출력에서 사용하기 위해 만들어진 Class
 //{
 //private:
 //	std::string mName;
@@ -285,18 +299,25 @@ rdstate() : read error state flag 의 약자로 오류 상태 플래그 모두 가져 온다.
 //	// 선언에서는 friend 키워드를 사용하여 친구 함수로 선언해 줬다.
 //	friend std::istream& operator >>(std::istream& inputStream, Monster& monster);
 //	friend std::ostream& operator <<(std::ostream& ostream, Monster& monster);
+//// 클래스는 특별한 데이터 형식, 예를 들어 CSV 형식, 텍스트 형식, 또는 사용자 지정 형식에 대한 
+//// 데이터를 처리하도록 설계될 수 있다. 이 클래스를 사용하면 데이터를 읽고 쓰는 데 일관된 형식을 적용할 수 있다.
 //};
 //std::istream& operator >>(std::istream& inputStream, Monster& monster)
 //{
 //	std::string buffer;
 //	try
-//	{	// 각 멤버들을 하나씩 가져온다.
+//	{	// 스트림에서 문자열을 ','로 구분하여 읽어와서 각 멤버 변수에 할당한다.
+//
+//		// 1. 몬스터 이름을 스트림에서 읽어온다.
 //		std::getline(inputStream, buffer, ',');
 //		monster.mName = buffer;
+//		// 2. 몬스터 레벨을 스트림에서 읽어온다.
 //		std::getline(inputStream, buffer, ',');
 //		monster.mLevel = std::stoi(buffer);
+//		// 3. 몬스터 체력을 스트림에서 읽어온다.
 //		std::getline(inputStream, buffer, ',');
 //		monster.mHP = std::stoi(buffer);
+//		// 4. 몬스터 마나를 스트림에서 읽어온다.
 //		std::getline(inputStream, buffer);
 //		monster.mMP = std::stoi(buffer);
 //	}
@@ -304,6 +325,8 @@ rdstate() : read error state flag 의 약자로 오류 상태 플래그 모두 가져 온다.
 //	{
 //		std::cerr << "데이터 형식이 잘못 되었다.\n";
 //	}
+//
+//	// 스트림을 반환한다. 이러면 연속된 입력 작업이 가능하다.
 //	return inputStream;
 //}
 //std::ostream& operator <<(std::ostream& ostream, Monster& monster)
@@ -416,75 +439,86 @@ POD의 특성
 단순히 struct 에 편의상 생성자 정도만 허용되는 타입이라 보면 된다.
 */
 
-#include <iostream>
-#include <vector>
-#include <fstream>
-#include "Monster.h"
-struct Header
-{
-	int version{ 1 };
-	int itemCount{};
-};
-bool SaveToFile(const char* filename, std::vector<Monster>& monsters)
-{
-	std::ofstream ostream;
-	ostream.exceptions(std::ofstream::badbit | std::ofstream::failbit);
-	try
-	{
-		ostream.open(filename, std::ofstream::binary);
-
-		// Header 데이터는 POD 이므로 한 번에 일기/쓰기가 가능하다. write나 read는 char* 를 매개변수로 받아들이기 때문에,
-		// &header 즉 header 구조체의 주소를 char* 로 변경하는 것이다.
-		Header header{ 1,static_cast<int>(monsters.size()) };
-		ostream.write(reinterpret_cast<char*>(&header), sizeof(Header));
-
-		for (auto item : monsters)
-		{
-			ostream << item;
-		}
-		ostream.close();
-	}
-	catch (std::ofstream::failure e)
-	{
-		std::cerr << "파일 저장 중에 예외가 발생했습니다\n" <<
-			e.what() << '\n';
-		ostream.close();
-		return false;
-	}
-	return true;
-}
-bool LoadFromFile(const char* filename, std::vector<Monster>& monsters)
-{
-	std::ifstream istream;
-	istream.exceptions(std::ifstream::badbit | std::ifstream::failbit);
-	try
-	{
-		istream.open(filename, std::ifstream::binary);
-		Header header;
-		istream.read(reinterpret_cast<char*>(&header), sizeof(Header));
-		for (int i = 0; i < header.itemCount; i++)
-		{
-			Monster monster;
-			istream >> monster;
-			monsters.push_back(monster);
-		}
-		istream.close();
-	}
-	catch (std::ifstream::failure e)
-	{
-		std::cerr << "파일 저장 중에 예외가 발생했습니다.\n" << e.what() << '\n';
-		istream.close();
-		return false;
-	}
-	return true;
-}
-int main()
-{
-	std::vector<Monster> monsterList;
-	monsterList.push_back(Monster{ "JELLY",1,1,1 });
-	monsterList.push_back(Monster{ "WOLF",5,5,5 });
-	monsterList.push_back(Monster{ "DEMON",10,10,10 });
-	SaveToFile("Data/SimpleData.dat", monsterList);
-	monsterList.clear();
-	LoadFromFile("Data/SimpleData.dat", monsterList);
-}
+//#include <iostream>
+//#include <vector>
+//#include <fstream>
+//#include "Monster.h"
+//struct Header
+//{
+//	int version{ 1 };
+//	int itemCount{};
+//};
+//bool SaveToFile(const char* filename, std::vector<Monster>& monsters)	// 객체들의 벡터를 이진 파일에 저장
+//{
+//	std::ofstream ostream;
+//	ostream.exceptions(std::ofstream::badbit | std::ofstream::failbit);
+//	try
+//	{
+//		// 이진 모드로 파일을 연다. 이 옵션을 사용하면 파일에서 데이터를 이진 형식으로 읽거나 쓸 수 있다.
+//		ostream.open(filename, std::ofstream::binary);
+//
+//		// Header 데이터는 POD 이므로 한 번에 읽기/쓰기가 가능하다. write나 read는 char* 를 매개변수로 받아들이기 때문에,
+//		// &header 즉 header 구조체의 주소를 char* 로 변경하는 것이다.
+//		Header header{ 1,static_cast<int>(monsters.size()) };
+//		// reinterpret_cast를 사용하여 Header 구조체의 포인터를 char* 포인터로 형변환 
+//		// 이렇게 하면 구조체의 메모리 레이아웃을 그대로 이진 데이터로 쓸 수 있다.
+//		// 바이너리 데이터를 파일 또는 스트림에 쓸 때 사용되는 함수
+//		ostream.write(reinterpret_cast<char*>(&header), sizeof(Header));
+//
+//		for (auto item : monsters)
+//		{
+//			ostream << item;
+//		}
+//		ostream.close();
+//	}
+//	catch (std::ofstream::failure e)
+//	{
+//		std::cerr << "파일 저장 중에 예외가 발생했습니다\n" <<
+//			e.what() << '\n';
+//		ostream.close();
+//		return false;
+//	}
+//	return true;
+//}
+//bool LoadFromFile(const char* filename, std::vector<Monster>& monsters)	// 이진 파일에서 데이터를 읽어와 Monster 객체들을 std::vector에 로드
+//{
+//	std::ifstream istream;
+//	istream.exceptions(std::ifstream::badbit | std::ifstream::failbit);
+//	try
+//	{
+//		// 파일을 이진(binary) 모드로 연다. 이렇게 열면 파일의 내용을 바이너리 데이터로 다루며, 
+//		// 텍스트 데이터나 특수 문자를 다룰 때 자동으로 변환하지 않는다. 
+//		// 이진 모드로 파일을 열 때 데이터를 정확히 그대로 읽고 쓰게 된다.
+//		istream.open(filename, std::ifstream::binary);
+//
+//		// 바이너리 파일로부터 데이터를 읽어온다. 이때 Header 구조체의 크기(sizeof(Header))만큼 데이터를 읽어온다.
+//		// 읽어온 이진 데이터를 Header 구조체 형식으로 해석, 파일에서 읽은 데이터를 Header 객체에 저장한다.
+//		Header header;
+//		istream.read(reinterpret_cast<char*>(&header), sizeof(Header));
+//
+//		for (int i = 0; i < header.itemCount; i++)
+//		{
+//			Monster monster;
+//			istream >> monster;
+//			monsters.push_back(monster);
+//		}
+//		istream.close();
+//	}
+//	catch (std::ifstream::failure e)
+//	{
+//		std::cerr << "파일 저장 중에 예외가 발생했습니다.\n" << e.what() << '\n';
+//		istream.close();
+//		return false;
+//	}
+//	return true;
+//}
+//int main()
+//{
+//	std::vector<Monster> monsterList;
+//	monsterList.push_back(Monster{ "JELLY",1,1,1 });
+//	monsterList.push_back(Monster{ "WOLF",5,5,5 });
+//	monsterList.push_back(Monster{ "DEMON",10,10,10 });
+//	SaveToFile("Data/SimpleData.dat", monsterList);
+//	monsterList.clear();
+//	LoadFromFile("Data/SimpleData.dat", monsterList);
+//}
