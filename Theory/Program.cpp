@@ -723,3 +723,106 @@ player.Move();
 		운영체제가 제어						|			프로세스가 제어
 	Context-Switching 의 문제				|		자원 공유의 문제( deadlock )
 */
+
+/* ----- < 유용한 파일 포멧 > ----- */
+
+// 실제 게임을 만들다 보면, 하나의 객체 안에 서로 다른 객체를 포함하는 경우가 많다.
+// Monster 의 경우 이름, 레벨, HP, MP 로 되어 있는데, 레벨 HP MP 는 몬스터 만이 아니라 플레이어도 가지고 있어야 하므로 다른 구조로 분리시켜 두는 것이 좋다.
+// 이렇게 중첩된 데이터의 경우는 csv로 표현하기 어렵다.
+
+/*
+struct Status
+{
+	int mLevel;
+	int mHP;
+	int mMP;
+};
+struct Item
+{
+	std::string mName;
+	int mGold;
+};
+class Monster
+{
+private:
+	std::string mName;
+
+	Status mStatus;
+	std::vector<Item> mDropItems;
+};
+*/
+
+// 아이템이나 스테이터스는 플레이어도 NPC 도 사용이 가능하므로, POD 로 분리시켜 둔다. 위 내용을 csv로 표현하려면
+// mName, mLevel, mHP, mMP, mName, mStatus 와 같이 모든 내부 데이터를 행으로 나열하여 표현이 가능하긴 하지만, 이럴 경우 혼동이 발생할 수 있다.
+
+/* 문서객체모델( DOM : Document Object Model ) */
+
+// 웹( web )은 텍스트 문서로 되어 있다. 그렇게 하는 것이 전세계 모든 사람들이 컴퓨터 종류, 운영체제, 브라우저 등에
+// 구애받지 않고 웹서핑이 가능하기 때문이다.
+// 하지만 브라우저 개발사들 마다 자신만의 기능을 사용하게 되면서 브라우저 전쟁이 벌어지게 되었다.
+// 여러 브라우저들이 각각 멋대로 문서를 해석하기 시작하면서 최초의 모두에게 동일한 화면이라는 계획이 어긋나 버렸고,
+// 결국 W3C( WWW Consortium )에서 권고안을 발표한 것이 바로 DOM 이다.
+
+// 처음 시작은 웹에서 문서를 객체화로 정리하는 것이긴 했지만, 객체지향 언어들에서 해당 개념을 자료구조를 표현하는 용도로도
+// 자주 사용하게 되었다. 다음 용어들이 DOM의 핵심 기능들이다.
+
+/*
+document : 객체화된 문서를 나타낸다.
+element : 문서에 속한 각 노드를 의미한다.
+nodelist : element 의 배열이다.
+attribute : element 에 속한 값이다.
+*/
+
+/* XML( Extensible Markup Language ) */
+
+// W3C( WWW Consortium )에서 개발한 마크업 언어이다. 태그 등을 이용해 문서나 데이터 구조를 표현하는 것을 마크업 언어라고 하는데,
+// 가장 대표적인 것이 웹에서 사용하는 HTML( HyperText Markup Language )이다. XML 은 웹페이지에 특화된 HTML 과 달리
+// 좀더 범용적으로 데이터를 표현하기 위해 만들어진 것으로, 인터넷으로 연결된 컴퓨터들 끼리 데이터를 쉽게 주고 받을 수 있도록
+// 고안된 언어이다. 그 덕에 일반 프로그램의 자료구조 표현에도 매우 유용하다.
+
+/*
+<? xml version = "1.0" encoding = "UTF-8" standalone = "no" ?>
+<monster>
+	<name>악마</name>
+	<status>
+		<level>10 </level>
+		<hp>10 </hp>
+		<mp>10 </mp>
+	</status>
+</monster>
+*/
+
+/* JSON( JaveScript Object Notation ) */
+
+// 최근 유행하고 있는 형식으로, 사람이 일기 쉬운 형태로 데이터를 표현하는 것이 큰 장점이다.
+// 자바스크립트 언어에서 파생되어 탄생했지만, 언어적인 키워드가 없어서 다른 프로그래밍 언어에서도 쉽게 사용이 가능하다.
+// 무엇보다 프로그래머에게는 매우 익숙한 스타일이라 최근 널리 사용되고 있다.
+
+/*
+{
+	"name": "악마",
+	"status":
+	{
+		"level":10,
+		"hp":10,
+		"mp":10
+	}
+	...
+	"array":["elem1": 1, "elem2":2, "elem3":3 ]
+}
+*/
+
+/* 저작권 */
+
+// 프로그램을 개발하다 보면, 외부의 라이브러리를 사용할 경우가 많다. 이렇게 다른 사람의 코드를 사용할 때는 저작권을 꼭 지켜야 한다.
+// 게임 리소스등을 고의로 무료인척 뿌리고 게임 출시하면 감시하다 변호사를 고용하는 경우가 있다.
+// 다행이 프로그래머들은 오픈소스( Open Source : 소스 코드 공개 )정신이 투철해서 무료로 배포하는 경우가 상당히 많다.
+
+/*
+GPL( General Public License ) : 제법 엄격하다. 모든 코드 GPL 로 공개, 라이선스 및 저작권 명시
+LPGL( Lesser General Public License ) : 위 규약이 너무 엄격해서 제안된 방식. 단순 사용은 공개하지 않아도 됨, 수정한 코드는 LPGP로 공개, 라이선스 저작권 명시
+BSD( Berkeley Software Distribution ) : 미국 정부가 제공하는 돈으로 운영되는 라이브러리. 라이선스 및 저작권 명시
+Apache( Apache License ) : 아파치 재단이 소유한 저작권으로 BSD 와 비슷함. 변경사항 표기, 아파치 상표권 침해 금지 조항, 라이선스 및 저작권 명시
+MIT( MIT License ) : MIT 대학에서 학생들에게 배포 목적으로 시작한 라이선스.
+WTFPL Beerware( Do What The Fuck You Want To Public License Beer Linces ) : 하고 싶은대로 하라는 의미
+*/
