@@ -522,3 +522,137 @@ POD의 특성
 //	monsterList.clear();
 //	LoadFromFile("Data/SimpleData.dat", monsterList);
 //}
+
+//#include <iostream>
+//#include <fstream>
+//#include <string>
+//#include <regex>
+//#include <vector>	// 파일 입출력, 문자열, 벡터 컨테이너를 위한 헤더를 포함
+//
+//// 문자열 파싱으로 간단한 파서( Parser )를 제작해 보자
+//// "<sprite"로 시작하는 element 를 데이터로 만든다.
+//
+//class Sprite
+//{
+//public:
+//	std::string n;
+//	int			x;
+//	int			y;
+//	int			w;
+//	int			h;
+//// 데이터 구조를 저장하기 위한 Sprite 클래스
+//};
+
+/*
+std::regex_iterator
+	정규 표현식 탐색 결과들의 원소를 탐색할 이터레이터이다. 탐색 결과가 문자, 문자열, 유니코드에 따라 다음과 같은 이름을 사용한다.
+	char : regex_iterator
+	std::string : sregex_iterator
+	std::wstring : wsregex_iterator
+생성자를 통해 검색할 컨테이너( 시작, 종료 ) 와 패턴을 넘겨서 검색 결과에 대한 첫 번째 이터레이터를 가져올 수 있다.
+찾아온 결과( 이터레이터 )는 [0]에 원본 문자열, [1]에는 패턴에 맞는 문자열이 들어 있다.
+*/
+
+/*
+코드의 흐름
+
+	파일 열기
+
+	패턴 생성( std::regex )
+
+	파일 끝까지 반복
+		한 줄 읽어오기
+		패턴으로 이터레이터를 생성( std::regex_iterator )
+		이터레이터를 증가시키면서 탐색
+			속성값 처리
+*/
+
+//void LoadXML(const char* filename, std::vector<Sprite>& sprites)
+//{
+//	// 1. 벡터를 초기화 하여 기존 데이터를 모두 제거 한다.
+//	sprites.clear();
+//
+//	// 2. filename 경로에 있는 파일을 바이너리 모드로 읽기 위해 std::ifstream 객체를 생성
+//	std::ifstream file(filename, std::ifstream::binary);
+//	// 3. 파일에서 한 줄씩 읽어올 문자열 line을 선언
+//	std::string line;
+//	// 4. "<sprite" 문자열을 찾기 위한 정규 표현식 패턴을 정의, 
+//	//		=> 이 패턴은 <sprite 다음에 따라오는 속성값을 추출
+//	std::regex pattern("\"([^\"]*)\"");
+//
+//	// 5. 파일을 끝을 읽을 때까지 반복
+//	while (!file.eof())
+//	{
+//		// 6. 파일에서 한 줄을 읽어서 line 문자열에 저장
+//		std::getline(file, line);
+//		// 7. 현재 읽은 줄( line )에서 <sprite 문자열이 있는지 검사하고, 위치를 result에 저장
+//		auto result = line.find("<sprite");
+//		// 8. <sprite 문자열이 발견되면 아래 코드 블록이 실행된다.
+//		if (result != std::string::npos)
+//		{
+//			// 9. 현재 줄( line )에서 정규 표현식 패턴에 맞는 부분을 찾기 위한 이터레이터 current를 생성
+//			//		=> pattern은 <sprite 다음에 따라오는 속성값을 찾는 패턴
+//			std::sregex_iterator current(line.begin(), line.end(), pattern);
+//			// 10. 이터레이터의 끝을 나타내는 end를 생성
+//			std::sregex_iterator end;
+//			// 11. 현재 처리 중인 속성의 인덱스를 나타내는 변수 index
+//			int index{ 0 };
+//			// 12. 데이터를 저장할 Sprite 객체 생성
+//			Sprite sprite;
+//
+//			// 13. 정규 표현식에 맞는 데이터를 찾는 동안
+//			while (current != end)
+//			{
+//				// 14. 현재 이터레이터 current가 가리키는 정규 표현식 패턴에 맞는 문자열을 추출하여 token에 저장 
+//				//		=> [1]은 정규 표현식에서 첫 번째 캡처 그룹을 의미, 이것은 패턴에서 "( )" 사이의 문자열을 추출
+//				std::string token = (*current)[1];
+//				switch (index)
+//				{
+//				case 0:
+//					// "n = 이름"
+//					sprite.n = token;
+//					break;
+//				case 1:
+//					// "x = 위치X"
+//					sprite.x = std::stoi(token);
+//					break;
+//				case 2:
+//					//"y = 위치Y"
+//					sprite.y = std::stoi(token);
+//					break;
+//				case 3:
+//					// "w = 너비"
+//					sprite.w = std::stoi(token);
+//					break;
+//				case 4:
+//					// "h = 높이"
+//					sprite.h = std::stoi(token);
+//					break;
+//				}
+//				// 15. 속성 인덱스를 증가, 이터레이터를 다음으로 이동
+//				index++;
+//				current++;
+//			}
+//			// 16. <sprite> 요소가 모든 속성을 포함하고 있다면 index는 4
+//			if (index > 4)
+//			{
+//				// 17. <sprite> 요소의 모든 속성을 sprite 객체에 저장한 후, 이 객체를 sprites 벡터에 추가
+//				sprites.push_back(sprite);
+//			}
+//		}
+//	}
+//}
+//int main()
+//{
+//	std::vector<Sprite> mySprites;
+//
+//	LoadXML("mydata.xml", mySprites);
+//
+//	for (auto e : mySprites)
+//	{
+//		std::cout <<
+//			e.n << " : " <<
+//			e.x << ", " << e.y << ", " <<
+//			e.w << ", " << e.h << '\n';
+//	}
+//}

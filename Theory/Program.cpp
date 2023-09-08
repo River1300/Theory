@@ -826,3 +826,62 @@ Apache( Apache License ) : 아파치 재단이 소유한 저작권으로 BSD 와 비슷함. 변경사
 MIT( MIT License ) : MIT 대학에서 학생들에게 배포 목적으로 시작한 라이선스.
 WTFPL Beerware( Do What The Fuck You Want To Public License Beer Linces ) : 하고 싶은대로 하라는 의미
 */
+
+/* ----- < XML > ----- */
+
+/*
+XML 은 간단히 다음과 같은 4가지 요소로 되어 있다.
+	선언
+		헤더와 같은 의미로 해당 문서가 XML 포멧을 따르고 있음을 지정한다. 보통 <? ~ ?> 의 현태로 XML 버전, 언어 인코딩 정보를 담고 있다.
+		=> <?xml version="1.0" encoding="EUC-KR"?>
+	태그
+		< ~ > 의 형태로 다음과 같이 주로 사용된다.
+			시작 태그 : <section>
+			끝 태그 : </section>
+			빈 태그 : <section /> : 원소의 내용이 없는 경우
+	원소
+		시작 태그 부터 끝 태그 사이의 내용이다.
+		=> <section> Hello, World </section>
+	속성
+		이름/값으로 이루어진 구조로 시작태그에 포함된다.
+		=> <img src="wallpaper.jpg" alt="바탕화면"> 바탕화면 이미지 </img>
+
+element 는 부모/자식처럼 종속 관계를 가질 수 있다.
+	<parent>
+		<child> </child>
+		<child2/>
+	</parent>
+*/
+
+/* 간단한 XML 파일 분석 */
+
+/*
+<?xml version="1.0" encoding="utf-8"?>
+<TextureAtlas imagePath="sprites.png" width="256" height="256">
+	<sprite n="bug1_1.png" x="0" y="0" w="24" h="24"/>
+	<sprite n="bug1_2.png" x="24" y="0" w="24" h="24"/>
+	<sprite n="bug1_3.png" x="48" y="0" w="24" h="24"/>
+	<sprite n="bug1_4.png" x="72" y="0" w="24" h="24"/>
+</TextureAtlas>
+
+간단히 다음과 같은 파일을 하나 만들어서 저장한다. 화면에 그릴 이미지의 영역을 표현한 데이터로 다음과 같은 element 를 가지고 있다.
+*/
+
+/*
+<TextureAtlas imagePath="sprites.png" width="256" height="256">
+	Element : TextureAtlas
+	Attributes : 
+		imagePath="sprites.png" : 이미지 파일 경로
+		width="256" : 이미지 너비
+		height="256" : 이미지 높이
+*/
+
+/*
+<sprite n="bug1_1.png" x="0" y="0" w="24" h="24"/>
+	Element : sprite
+	Attributes :
+		x="0" : x offset
+		y="0" : y offset
+		w="24" : 너비
+		h="24" : 높이
+*/
