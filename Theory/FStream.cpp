@@ -656,3 +656,134 @@ std::regex_iterator
 //			e.w << ", " << e.h << '\n';
 //	}
 //}
+
+//#include "Monster.h"
+//#include "tinyxml2.h"
+//
+//using namespace tinyxml2;
+//
+//bool SaveToXML(const char* filename, const std::vector<Monster>& monsters);
+//bool LoadFromXML(const char* filename, std::vector<Monster>& monsters);
+//
+//int main()
+//{
+//	std::vector<Monster> monsters;
+//
+//	Monster monster;
+//	monster.SetName("슬라임");
+//	monster.SetStatus(Status{ 1,1,1 });
+//	monster.AddDropItem(Item{ "끈적한 젤리", 1 });
+//	monsters.push_back(monster);
+//	monster.GetDropItems().clear();
+//
+//	monster.SetName("늑대인간");
+//	monster.SetStatus(Status{ 5,5,5 });
+//	monster.AddDropItem(Item{ "발톱", 2 });
+//	monster.AddDropItem(Item{ "늑대가죽", 5 });
+//	monsters.push_back(monster);
+//	monster.GetDropItems().clear();
+//
+//	monster.SetName("악마");
+//	monster.SetStatus(Status{ 10,10,10 });
+//	monster.AddDropItem(Item{ "날개", 10 });
+//	monster.AddDropItem(Item{ "손톱", 5 });
+//	monsters.push_back(monster);
+//
+//	SaveToXML("Data/monsters.xml", monsters);
+//	monsters.clear();
+//	LoadFromXML("Data/monsters.xml", monsters);
+//}
+//
+//bool SaveToXML(const char* filename, const std::vector<Monster>& monsters)
+//{
+//	// 1. XML 문서를 관리하는 인스턴스 Document 를 생성
+//	XMLDocument doc;
+//
+//	// 2. 선언부를 만든다.
+//	//	=> 주의할 점은 인코딩을 EUC-KR 로 지정해야 한다.
+//	XMLDeclaration* decl = doc.NewDeclaration(
+//		R"(xml version="1.0" encoding="EUC-KR")"
+//	);
+//	// 3. 선언부를 doc( 문서 관리자 )에 붙인다.
+//	//	=> 이런 식으로 만들어진 항목들은 doc 에 붙여 줘야 XML 형식을 갖추게 된다.
+//	doc.LinkEndChild(decl);
+//
+//	// 4. monster는 monster -> monster -> status -> item 구조로 되어 있다.
+//	//	=> 가장 최산단 노드( 루트 )는 monsters 이다.
+//	//	=> 새로운 원소는 무조건 Document 를 통해서만 생성이 가능하다.
+//	XMLElement* pRootNode = doc.NewElement("monsters");
+//
+//	for (auto monster : monsters)
+//	{
+//		// 5. monster 노드를 생성하고 속성값을 만든다. 
+//		//	=> SetAttribute 멤버 함수는 속성의 이름과 const char*, int, bool, float 등 다양한 타입의 값을 매개변수로 처리할 수 있다.
+//		//	=> 부모/자식 관계를 고려해서 노드를 생성하고 속성을 지정한다.
+//		auto pMonsterNode = doc.NewElement("monster");
+//		pMonsterNode->SetAttribute("name", monster.GetName().c_str());
+//
+//		auto pStatusNode = doc.NewElement("status");
+//		Status status = monster.GetStatus();
+//		pStatusNode->SetAttribute("level", status.mLevel);
+//		pStatusNode->SetAttribute("hp", status.mHP);
+//		pStatusNode->SetAttribute("mp", status.mMP);
+//		pMonsterNode->LinkEndChild(pStatusNode);
+//
+//		auto pItemsNode = doc.NewElement("items");
+//		for (auto item : monster.GetDropItems())
+//		{
+//			auto pItemNode = doc.NewElement("item");
+//			pItemNode->SetAttribute("name", item.mName.c_str());
+//			pItemNode->SetAttribute("gold", item.mGold);
+//			pItemNode->LinkEndChild(pItemNode);
+//		}
+//		pMonsterNode->LinkEndChild(pItemsNode);
+//		pRootNode->LinkEndChild(pMonsterNode);
+//	}
+//	doc.LinkEndChild(pRootNode);
+//	// 6. Document 의 멤버 함수 SaveFile 을 사용하면 파일로 저장할 수 있다.
+//	//	=> 파일 처리 중에 예외가 발생하면 반환값으로 알려 준다. 
+//	//	=> 잘못된 속성 값 등 XML 포멧에 대한 오류 및 파일 오류까지 모두 반환한다.
+//	return (doc.SaveFile(filename) == XML_SUCCESS);
+//}
+//bool LoadFromXML(const char* filename, std::vector<Monster>& monsters)
+//{
+//	XMLDocument doc;
+//
+//	// 1. XML 파일을 불러온다. SaveFile 과 마찬가지로 성공하면 XML_SUCCESS 를 반환한다.
+//	if (doc.LoadFile(filename) != XML_SUCCESS)
+//	{
+//		return false;
+//	}
+//
+//	// 2. Document 에서 tag 가 "monsters" 인 가장 첫번째 자식 원소를 찾아 온다.
+//	auto pRootNode = doc.FirstChildElement("monsters");
+//	// 3. 현재 노드의 모든 자식 노드를 탐색
+//	for (auto pMonsterNode = pRootNode->FirstChildElement();
+//		pMonsterNode;
+//		pMonsterNode = pMonsterNode->NextSiblingElement())
+//	{
+//		Monster monster;
+//
+//		monster.SetName(pMonsterNode->Attribute("name"));
+//
+//		auto pStatusNode = pMonsterNode->FirstChildElement("status");
+//		Status status;
+//		status.mLevel = pStatusNode->IntAttribute("level");
+//		status.mHP = pStatusNode->IntAttribute("hp");
+//		status.mMP = pStatusNode->IntAttribute("mp");
+//		monster.SetStatus(status);
+//
+//		auto pItemsNode = pMonsterNode->FirstChildElement("items");
+//		for (auto pItemNode = pItemsNode->FirstChildElement();
+//			pItemNode;
+//			pItemNode = pItemNode->NextSiblingElement())
+//		{
+//			Item item;
+//			item.mName = pItemNode->Attribute("name");
+//			item.mGold = pItemNode->IntAttribute("gold");
+//			monster.AddDropItem(item);
+//		}
+//		monsters.push_back(monster);
+//	}
+//	return true;
+//}

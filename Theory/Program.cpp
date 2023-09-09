@@ -885,3 +885,29 @@ element 는 부모/자식처럼 종속 관계를 가질 수 있다.
 		w="24" : 너비
 		h="24" : 높이
 */
+
+/* ----- < TinyXML > ----- */
+
+// http://github.com/leethomason/tinyxml2 에서 다운 받기
+// 압축을 푼 후에 TinyXML2.h, TinyXML2.cpp 파일 두개를 찾는다.
+// 프로젝트 폴더에 넣기
+// 프로젝트 폴더에 데이터를 넣기 위한 폴더 생성( Data )
+
+/*
+XMLNode : 최상위 기반 클래스
+XMLDocument : XML 문서 즉 파일을 관리하는 클래스
+XMLDeclaration : XML 헤더 부분을 관리
+XMLComment : XML 에 추가되는 주석을 담고 있다.
+XMLElement : XML 원소를 나타내며 컨테이너 클래스로 다른 원소, 텍스트, 주석 등을 포함할 수 있다. 원소는 속성을 가질 수 있다.
+XMLText : XML 텍스트를 나타내며 자식 원소 노드들을 가질 수 있다.
+XMLUnknown : TinyXML 에서 파싱하지 못하는 구문은 Unknown 으로 대체된다.
+XMLAttribute : XML 속성으로 < name, value > 쌍으로 되어 있다.
+XMLHandle : XMLNode 포인터의 래퍼 클래스로 Null 체크를 지원한다.
+	=> TinyXML2 의 기본 표현은 아니지만 다음과 같이 조금 더 코딩을 쉽게하기 위한 표기법이다.
+		=> handle.FirstChild("Doc").FirstChild("Element").FirstChild().NextSibling().ToElement();
+XMLConstHandle : 위 Handle 의 상수 버전
+XMLVisitor : 비지터 패턴으로 구현된 탐색자
+	=> Visitor Pattern : OOP 에 사용되는 디자인 패턴, 방문자 패턴이라고도 하며 객체와 알고리즘을 분리하는 방식으로 방문자는
+		=> 인터페이스로 구현되며 객체에서는 accept() 메서드를 이용해 방문자를 받아 들인다.
+XMLPrinter : 비지터를 이용해 XML의 내용을 프린트 한다.
+*/
