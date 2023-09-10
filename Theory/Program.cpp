@@ -1009,5 +1009,112 @@ UTF-16, UTF-32 는 각각 2바이트, 4바이트로 저장하다보니 엔디안 문제가 발생한다. �
 
 [ ... ] : 문자 클래스로 이 안에 있는 내용을 찾는다.
 ^\" : ^는 Not 이라는 뜻이다. 즉 따옴표가 아닌 모든 문자들을 의미한다.
+*/
 
+/* ----- < JSON > ----- */
+
+// 요즘 나오는 모바일 게임은 쉬운 서버 구축을 위해 HTTP 방식을 많이 사용하는데 여기에 태워 보내는 데이터들은 주로 문자열이므로 JSON 문자열을 많이 사용한다.
+// 물론 서버만이 아니더라도 관리가 쉽고 유연해서 다양한 분야에서 사용되고 있다.
+// JSON 형식에 대한 자세한 설명은 공식 페이지에서 살펴 볼 수 있다. http://json.org/json-ko.html
+
+/*
+// Configuration options
+{
+	// Default encoding for text
+	"my-encoding" : "UTF-8",
+	// Plug-ins loaded at start-up
+	"my-plug-ins" : [
+		"python",
+		"c++",
+		"ruby"
+		],
+	// Tab indent size
+	"my-indent" : { "length" : 3, "use_space": true }
+}
+
+주석도 가능하며, C++ 의 초기화 유니폼 초기화식과도 매우 유사하기 때문에 Java, C++, C#, Python 등 다양한 언어에서 널리 사용되는 방식이다.
+기본적으로 "이름" : 값 쌍으로 되어 있으며, 객체는 {} 기호를 배열은 [] 기호를 사용한다.
+
+기본 표현식 : "Object Name" : Value
+배열 표현식 : "Object Name" : [Value, Value, ...]
+오브젝트 중첩 : "Object Name" : { "Child" : Value }
+
+값은 다음과 같은 형식이 가능하다.
+	문자열
+	숫자
+	불리언
+	null
+	오브젝트
+	배열
+*/
+
+/*
+mName		mStatus				mDropItems
+"슬라임"	mLevel = 1;			{ mName = "끈적한 젤리", mGold = 1; }
+			mHP = 1;
+			mMP = 1;
+"늑대인간"	mLevel = 5;			{ mName = "발톱", mGold = 2 }
+			mHP = 5;			{ mName = "늑대가죽", mGold = 5 }
+			mMP = 5;
+"악마"		mLevel = 10;		{ mName = "날개", mGold = 10 }
+			mHP = 10;			{ mName = "손톱", mGold = 5 }
+			mMP = 10;
+*/
+
+/*
+위와 같은 데이터를 json 으로 표기하면 다음과 같다.
+{
+"monsters": [
+		{
+		"name": "슬라임",
+			"status" : {
+				"level": 1,
+				"hp": 1,
+				"mp": 1
+			},
+			"items" : [
+				{
+					"name": "끈적한 젤리",
+					"gold": 1
+				}
+			]
+		},
+		{
+		"name": "늑대인간",
+			"status" : {
+				"level": 5,
+				"hp" : 5,
+				"mp" : 5
+			},
+			"items" : [
+				{
+					"name": "발톱",
+					"gold" : 2
+				},
+				{
+					"name": "늑대가죽",
+					"gold" : 2
+				},
+			]
+		},
+		{
+		"name": "악마",
+			"status" : {
+				"level": 10,
+				"hp" : 10,
+				"mp" : 10
+			},
+			"items" : [
+				{
+					"name": "날개",
+					"gold" : 10
+				},
+				{
+					"name": "손톱",
+					"gold" : 5
+				},
+			]
+		},
+	]
+}
 */
