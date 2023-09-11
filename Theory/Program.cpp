@@ -1118,3 +1118,60 @@ mName		mStatus				mDropItems
 	]
 }
 */
+
+/* ----- < RapidJson > ----- */
+
+// https://github.com/Tencent/rapidjson
+
+/*
+NuGet
+
+비주얼 스튜디오에서 제공하는 패키지 자동 설치/관리 도구
+
+프로젝트 -> NuGet 패키지 관리를 선택한다.
+검색창에 RapidJson 을 입력하고 최신 버전을 선택한다.
+오른쪽 설치 버튼을 선택한다.
+*/
+
+/*
+RapidJson 은 문자열로 되어 있는 JSON String 을 DOM 으로 해석( Parsing )할 수 있으며 해당 DOM 을 통해 값에 접근하거나
+수정할 수 있게 된다. 물론 DOM 을 다시 JSON 문자열로 변환할 수 있다.
+
+rapidjson::Document : DOM 으로 표현된 JSON 객체이다.
+	=> 최상위( root ) Value 로 부터 시작하는 트리 구조를 가진다.
+rapidjson::Value : JSON 에 저장되는 모든 값을 통틀어 Value 라 부른다.
+	=> Int, Int64, Uint, Uint64, Bool, Double, Float, String, Object, Array 등의 타입을 가질 수 있다.
+*/
+
+//{
+//	"hello": "world",
+//	"t": true,
+//	"f": false,
+//	"n": null,
+//	"i": 123,
+//	"pi": 3.1416,
+//	"a": [1, 2, 3, 4]
+//}
+
+/*
+위와 같은 JSON 문자열을 해석( Parse )하면 다음과 같은 DOM 이 된다.
+
+Document
+
+Object :	string{"hello"} : string{"world"}
+			string{"t"}		: true
+			string{"f"}		: false
+			string{"n"}		: null
+			string{"i"}		: number{123}
+			string{"pi"}	: number{3.1416}
+			string{"a"}		: array{size=4}		: number{1}, number{2}, number{3}, number{4}
+*/
+
+/*
+객체를 JSON 화 하는 과정은 크게 2가지가 있다.
+
+객체 -> JSON : C++ 클래스를 바로 JSON 문자열로 변환한다.
+
+객체 -> DOM -> JSON : C++ 클래스를 DOM 객체로 만든 후 다시 JSON 문자열로 변환한다.
+	=> 모바일 게임에서 서버와 통신을 JSON 으로 하는 경우가 있는데 이런 경우는 DOM 객체를 가지고 있는 것이 편할 경우가 있다.
+*/

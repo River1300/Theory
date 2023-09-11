@@ -787,3 +787,172 @@ std::regex_iterator
 //	}
 //	return true;
 //}
+
+//#include <iostream>
+//#include <fstream>
+//#include <sstream>
+//#include "Monster.h"
+//#include <rapidjson/document.h>
+//#include <rapidjson/prettywriter.h>
+//
+//using namespace rapidjson;
+//
+//bool SaveToJson(const char* filename, const std::vector<Monster>& monsters);
+//bool LoadFromJson(const char* filename, std::vector<Monster>& monsters);
+//
+//int main()
+//{
+//	std::vector<Monster> monsters;
+//
+//	Monster monster;
+//	monster.SetName("슬라임");
+//	monster.SetStatus(Status{ 1,1,1 });
+//	monster.AddDropItem(Item{ "끈적한 젤리", 1 });
+//	monsters.push_back(monster);
+//	monster.GetDropItems().clear();
+//
+//	monster.SetName("늑대인간");
+//	monster.SetStatus(Status{ 5,5,5 });
+//	monster.AddDropItem(Item{ "발톱", 2 });
+//	monster.AddDropItem(Item{ "늑대가죽", 5 });
+//	monsters.push_back(monster);
+//	monster.GetDropItems().clear();
+//
+//	monster.SetName("악마");
+//	monster.SetStatus(Status{ 10,10,10 });
+//	monster.AddDropItem(Item{ "날개", 10 });
+//	monster.AddDropItem(Item{ "손톱", 5 });
+//	monsters.push_back(monster);
+//
+//	SaveToJson("Data/monsters.json", monsters);
+//	monsters.clear();
+//	LoadFromJson("Data/monsters.json", monsters);
+//}
+//
+//bool SaveToJson(const char* filename, const std::vector<Monster>& monsters)
+//{
+//	// 1. StringBuffer 는 rapidjson 에서 사용하는 독자적인 스트링 클래스다. JSON은 문자열 처리가 대부분이므로 최적화된 성능을
+//	//	=> 발위하기 위해 C++의 string 이 아닌 자체 방식을 사용한다.
+//	StringBuffer sb;
+//	// 2. PrettyWriter 는 JSON 표기를 예쁘게 해주는 것으로 일반 Writer 는 단순히 한줄로 모두 나영하는 반면, PrettyWriter 는
+//	//	=> 줄바꿈, 들여쓰기 표기를 해준다. 보통 네트워크로 전송하거나 할 때는 일반 Writer로 데이터양을 줄여서 사용하고,
+//	//	=> 파일로 저장할 때는 PrettyWriter 를 사용한다.
+//	//	=> Writer 계열은 스트림 방식으로 StringBuffer, FileReadStream, FileWriteStream 등을 템플릿 매개 변수로 받아서 처리한다.
+//	//	=> 역시 최적화를 위해 C++의 iostream 은 사용을 피하고 있다.
+//	PrettyWriter<StringBuffer> writer(sb);
+//
+//	// 3. 오브젝트의 시작과 끝을 기록한다. JSON 표기상 스트림에 각각 {,}기호를 출력한다고 보면 된다.
+//	writer.StartObject();
+//	// 4. 현재 오브젝트에 키를 기록한다. JSON 표기상 "monsters": 를 기록한다고 보면 된다.
+//	//	=> 키 다음에는 Value( 값 )을 기록하면 되는데 Int(), String(), Double() 등의 일반 타입의 값이나 Object, Array 타입을 기록할 수 있다.
+//	writer.Key("monsters");
+//	writer.StartArray();
+//	for (auto monster : monsters)
+//	{
+//		writer.StartObject();
+//		{
+//			writer.Key("name"); writer.String(monster.GetName().c_str());
+//			writer.Key("status");
+//			writer.StartObject();
+//			{
+//				Status status = monster.GetStatus();
+//				writer.Key("level"); writer.Int(status.mLevel);
+//				writer.Key("hp"); writer.Int(status.mHP);
+//				writer.Key("mp"); writer.Int(status.mMP);
+//			}
+//			writer.EndObject();
+//
+//			writer.Key("items");
+//			writer.StartArray();
+//			{
+//				for (auto item : monster.GetDropItems())
+//				{
+//					writer.StartObject();
+//					{
+//						writer.Key("name"); writer.String(item.mName.c_str());
+//						writer.Key("gold"); writer.Int(item.mGold);
+//						writer.EndObject();
+//					}
+//				}
+//			}
+//			writer.EndArray();
+//		}
+//		writer.EndObject();
+//	}
+//	writer.EndArray();
+//	writer.EndObject();
+//
+//	std::ofstream ofs;
+//	ofs.exceptions(std::ofstream::badbit | std::ofstream::failbit);
+//
+//	try
+//	{
+//		ofs.open(filename);
+//		// 5. StringBuffer 의 GetString() 멤버 함수를 사용하여 JSON 문자열의 C-Style 문자열 포인터를 가져와 스트림으로 보낸다.
+//		ofs << sb.GetString();
+//
+//		ofs.close();
+//	}
+//	catch (std::ofstream::failure e)
+//	{
+//		std::cerr << "파일 저장 중에 예외가 발생했습니다.\n";
+//		std::cerr << e.what();
+//
+//		ofs.close();
+//
+//		return false;
+//	}
+//
+//	return true;
+//}
+//bool LoadFromJson(const char* filename, std::vector<Monster>& monsters)
+//{
+//	// 1. JSON 파일을 std::ifstream 문자열을 이용하여 std::stringstream 타입으로 읽어 온다.
+//	//		=> rapidjson 에도 StringBuffer 나 StringStream 등이 존재하긴 하지만, 속도를 위해 매우 제한적인 기능만을
+//	//		=> 제공하는 형태라서 C++ 의 iostream 과 같이 사용할 수 없다.
+//	std::ifstream ifs;
+//	ifs.exceptions(std::ifstream::badbit | std::ifstream::failbit);
+//	std::stringstream ss;
+//
+//	try
+//	{
+//		ifs.open(filename);
+//		ss << ifs.rdbuf();
+//		ifs.close();
+//	}
+//	catch (std::ifstream::failure e)
+//	{
+//		std::cerr << "파일을 읽는 도중 예외가 발생했습니다.\n";
+//		std::cerr << e.what();
+//		ifs.close();
+//		return false;
+//	}
+//
+//	// 2. 읽어온 문자열을 사용해 Document( DOM 객체 )로 해석( Parse )한다.
+//	//		=> Parse 멤버 함수는 인자로 C-Style 문자열을 받는다.
+//	Document d;
+//	d.Parse(ss.str().c_str());
+//
+//	// 3. 반복문으로 배열의 원소에 접근한다.
+//	//		=> DOM 객체는 배열 첨자 표기법으로 원소를 직접 가져올 수 있다.
+//	for (auto& e : d["monsters"].GetArray())
+//	{
+//		Monster monster;
+//		monster.SetName(e["name"].GetString());
+//		Status status;
+//		status.mLevel = e["status"].GetObject()["level"].GetInt();
+//		status.mHP = e["status"].GetObject()["hp"].GetInt();
+//		status.mMP = e["status"].GetObject()["mp"].GetInt();
+//		monster.SetStatus(status);
+//
+//		for (auto& e2 : e["items"].GetArray())
+//		{
+//			Item item;
+//			item.mName = e2["name"].GetString();
+//			item.mGold = e2["gold"].GetInt();
+//			monster.AddDropItem(item);
+//		}
+//		monsters.push_back(monster);
+//	}
+//	return true;
+//}

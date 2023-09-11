@@ -1,5 +1,4 @@
 #pragma once
-#include <fstream>
 #include <string>
 #include <vector>
 
@@ -17,7 +16,7 @@ struct Item
 class Monster
 {
 private:
-	std::string mName;
+	std::string mName{};
 	Status mStatus{};
 	std::vector<Item> mDropItems{};
 
