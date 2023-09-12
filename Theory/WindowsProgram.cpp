@@ -133,3 +133,62 @@ int bottom : 사각의 우하단 논리좌표 Y
 하지만 장치( 모니터 )에서는 좌상단이 다른 곳이다. 이와 같이 장치와 응용프로그램의 좌표계를 구분지어서 사용하기 위해 만든 것이
 논리 좌표/물리 좌표 이다.
 */
+
+/* ----- GDI+ ----- */
+
+// Windows XP 의 발표와 함께, 기존 GDI 의 성능을 개선하고, 새로운 기능( 벡터 그래픽, 이미지, 폰트 등 )을 추가한 것이 GDI+ 이다.
+// 프로그래머의 시점에서 보자면, 장치독립적이던 기존 특성은 그대로 유지하고 C++ 클래스화 되어 있다는 점이 매력적이다.
+
+/*
+	[응용프로그램] -> [GDI+, C++ API] -> [GDI+, Flat API] <=> [그래픽 드라이버]
+*/
+
+/*
+#pragma comment (lib, "Gdiplus.lib") : GDI 는 윈도우 자체에 내장되어 있지만 GDI+ 는 선택사항이다.
+	=> 따라서 선언과 별개로 정의들이 필요한데, 이 정의는 gdiplus.dll 이라는 동적 연결 라이브러리( Dynamic Link Library )로
+	=> 되어 있다. 이를 사용하려면 위와 같이 라이브러리 파일을 등록해 줘야 한다.
+
+Gdiplus::GdiplusStartupInput gdiplusStartupInput; : GDI+ 를 초기화 하기 위한 정보를 가진 구조체
+	UINT32 GdiplusVersion : 버전을 명시한다. 항상 1이다. 업데이트가 없어서
+	DebugEventProc DebugEventCallback : 디버그용 빌드에서 asset, warning 을 위해 호출할 콜백 함수
+	BOOL SuppressBackgroundThread : GDI+ 백그라운드 스레드를 사용할지 말지에 대한 값이다. TRUE로 지정하면, 이미지 처리등 GDI+ 의 기능이 스레드로 개별 동작을 하게 된다.
+	BOOL SuppressExtrenalCodecs : 외부 이미지 코델을 사용할지 말지에 대한 값이다. 하지만 1.0에서는 지원하지 않는 방식이므로 앞으로도 지원하지 않는다.
+*/
+
+/*
+ULONG_PTR gdiplusToken;
+
+기존에 알고 있던 토큰은 언어를 구성하는 최소 단위 였지만, 여기선 다른 의미로 사용된다.
+주로 네트워크 환경이나 보안등에서 사용하는 개념이다. 과거 버스를 탈때 버스 티겟과 같은 것이 있었다.
+
+즉, 여기에서의 토큰은 GDI+ 를 사용하는 번호를 발급받음으로 우리 프로그램의 자격증명을 얻는 것이다.
+이 번호를 가지고 있으면 GDI+ 기능을 이용할 수 있는 것이다.
+*/
+
+/*
+Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, nullptr);
+
+GDI+ 를 구동한다. 기본 시스템이 아니므로 위와 같이 명시해줘야 한다.
+
+	매개변수
+		ULONG_PTR* token : GDI+ 를 사용할 토큰을 돌려 준다.
+			=> 함수에서 값을 돌려 줄 예정이므로 포인터로 지정한다.
+		GdiplusStartupInput* input : GDI+ 를 구동할 옵션을 지정한 GdiplusStartupInput 구조체를 포인터로 넘겨 준다.
+		GdiplusStartupOutput* output : GDI+ 를 구동한 후 필요한 정보들을 GdiplusStartupOutput 구조체로 넘겨준다.
+			=> 여기에는 백그라운드 스레드일 때 작업이 끝났을 때를 처리하는 알림 함수들이 넘어 온다.
+			=> nullptr 이면 반환하지 않는다.
+	반환값
+		Gdiplus::Status 는 GDI+ 의 상태를 정의해 둔 열거형으로, 정상적으로 수행되었으면 OK가 된다.
+*/
+
+/*
+Gdiplus::GdiplusShutdown(gdiplusToken); : GDI+ 를 종료하고 사용한 모든 리소스를 지운다.
+	=> 종료할 때는 시작할 때 건네 받은 토큰을 반드시 넘겨줘야만 한다.
+Graphics graphics(hdc); : GDI+ 는 클래스화 되어 있다. 선, 커브, 도형, 이미지, 텍스트 등의 대부분 그래픽 오브젝트 그리기를 담당하는 클래스가 Graphics 이며, hdc로 부터 인스턴스를 생성했다.
+
+Graphics 생성자는 다음과 같은 항목을 가진다.
+	HDC : DC 에 직접 그리기
+	HWND, BOOL : 윈도우에 직접 그리기
+	Image* : 이미지에 그리기
+	HDC, HANDLE : DC 와 특정 장치를 명시해서 그리기
+*/
