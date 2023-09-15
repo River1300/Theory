@@ -292,3 +292,79 @@ class std::uniform_int_distribution;
 나무에서 출발해 숲을 보는 방식
 코딩과 테스트에 집중하는 만큼 시간이 오래 걸린다. 단위 테스트를 자동화 할 수 있다면 매우 안정적이고 효율적인 방법
 */
+
+/* ----- DirectX ----- */
+
+// Microsoft 에서 제공하는 멀티미디어 종합 라이브러리
+// 하드웨어에 직접 접근한다는 의미로 Direct 라는 용어가 붙은 것이라 하드웨어의 성능을 100% 발휘할 수 있게 하여, 높은 품질의 3차원 그래픽을 만들 수 있게 해준다.
+
+/*
+Direct9 및 과거 버전 : 2002년부터 2011년 정도 까지 대부분의 개발자들이 사용한 버전,
+		=> 따라서 책이나 인터넷 자료를 찾아보면 이 버전의 코드가 가장 많을 수 있다.
+Direct10 : 새로운 그래픽 기술을 적용하기 위해 DirectX 의 오래된 구조를 싹 바꿔버린 버전,
+		=> Direct9 와 상당히 차이가 많아서 개발자들이 9 -> 10 전환을 피하다 보니 9가 더 인기 있었던 것 일 수도 있다.
+Direct11 : 기본 구조는 DX10 을 차용하고 추가적인 하드웨어 제어 기능을 도입했다.
+		=> DirectX11 은 Windows7을 지원하는 가장 최신 라이브러리이다. 초보자, 인디게임등 추천하는 버전이다.
+Direct12 : DX11 이 CPU 부하가 크다는 평가를 인식해서 CPU 관련 개선이 추가되었다. 여기에 그래픽카드의 성능을 더 발휘하기 위해
+		=> 조금 더 Low-Level 기능이 강화되었다.
+		=> 때문에 DX11 에서는 간단한 한 줄로 처리되던 것이 DX12 에서는 상당히 많은 세부 작업으로 나눠진 경우가 있다.
+		=> DX12 부터는 Windows10 지원, 전문가, GPU 하드웨어 전문가, 대규모 팀에서 추천하는 버전
+*/
+
+/*
+DirectX 는 종합 라이브러리 이므로 다음과 같은 여러가지 구성요소로 되어 있다.
+
+DXGI : DirectX Graphics Infrastructure 로 드라이버-하드웨어 간의 통신을 위한 API
+Direct2D : 2D 그래픽 표현 API
+Direct3D : 3D 그래픽 표현 API
+XInput : 윈도우 및 Xbox 컨트롤러를 통합하여 지원하는 입력 지원 API
+DirectMusic : 사운드 트랙 재생
+DirectAudio : DirectX8 이후에 음향과 3D 음향이 통합되었다.
+DirectWrite : DirectX10.1 부터 지우너하는 글꼭 표현 API
+DirectCompute : DirectX11 에 포함된 그래픽 프로세서를 사용한 연산 API
+
+내부적으로 COM( Component Object Model ) 기술이 적용되어, 여러 라이브러리( 컴포넌트 )들의 집합으로 되어 있다.
+*/
+
+/* Direct2D */
+
+/*
+1. Direct2D Factory 생성
+	HRESULT hr = D2D1CreateFactory(
+					D2D1_FACTORY_TYPE_SINGLE_THREADED, &gpD2DFactory);
+					=> Direct2D 의 멀티스레딩 모드를 지정, Direct2D 렌더링 엔진이 다중 스레드 환경에서 어떻게 동작할지 결정
+					=> D2D1_FACTORY_TYPE_SINGLE_THREADED 를 사용하는 경우, 
+						=> Direct2D 자체 내부적으로 스레드 관리를 수행하지 않는다. 따라서 Direct2D를 사용하는 
+						=> 애플리케이션에서 직접 스레드 관리를 해야한다. 이 모드는 멀티스레드 환경에서 
+						=> 단일 스레드에서만 Direct2D를 사용하는 경우에 적합하다.
+					=> 반면에 D2D1_FACTORY_TYPE_MULTI_THREADED를 사용하면,
+						=> Direct2D 렌더링 엔진이 멀티스레드 환경에서 내부적으로 스레드 관리를 수행하므로, 
+						=> 애플리케이션 개발자가 직접 스레드 동기화를 처리할 필요가 없다. 
+						=> 이 모드는 멀티스레드 환경에서 Direct2D를 사용할 때 권장되는 모드다.
+
+2. 렌더 타겟 생성
+	hr = gpD2DFactory->CreateHwndRenderTarget(
+		D2D1::RenderTargetProperties(),
+		D2D1::HwndRenderTargetProperties(
+			hwnd,
+			D2D1::SizeU(wr.right - wr.left, wr.bottom - wr.top),
+			&gpRenderTarget);
+			=> 클라이언트 영역을 구해온 뒤 윈도우 핸들에서 렌더타겟을 생성한다. ( 윈도우 내부에 그래픽을 그리는 것 )
+
+3. 그리기
+	void OnPaint(HWND hwnd)
+	{
+		HDC hdc;
+		PAINTSTRUCT ps;
+		hdc = BeginPaint(hwnd, &ps);
+
+		gpRenderTarget->BeginDraw();
+		gpRenderTarget->Clear(D2D1::ColorF(0.0f, 0.2f, 0.4f, 1.0f));
+		gpRenderTarget->EndDraw();
+
+		EndPaint(hwnd, &ps);
+	}
+	=> 렌더 타겟에 그릴 준비를 하고 GDI 와 비슷한 개념으로 시작과 끝을 각각 지정하고 그 사이에 그리기
+
+4. 리소스 해제
+*/
