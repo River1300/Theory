@@ -540,3 +540,225 @@ CLAMP : 마지막 픽셀을 늘려서 사용
 WRAP : 이미지를 반복( 타일링 )
 MIRROR : 반전시킨 이미지를 사용
 */
+
+/* ----- 프레임 워크 ----- */
+
+// 프레임워크( Framework )란 뼈대 혹은 체계를 뜻한다. 즉, 프로그래밍에서는 특정 운영체제,
+// 특정 그래픽 라이브러리를 위한 응용프로그램 표준 구조를 구현한 클래스와 라이브러리를 애플리케이션 프레임워크( Application Framework )라 부른다.
+
+/* 라이브러리 / API / SDK / Framework */
+
+/*
+Library :
+	프로그램에서 자주 사용할 편리한 함수 및 기능들을 모아 둔 모듈을 말한다.
+	쉽게 사용할 수 있도록 정의를 담은 헤더( .h )파일과 컴파일된 라이브러리( .lib )형태로 제공된다.
+
+Application Programming Interface :
+	앱 개발을 위해 주로 운영체제에서 필요한 기능들을 제공하는 인터페이스이다.
+	앱과 하드웨어를 연결해 주는 역할을 한다.
+
+Software Development Kit : 
+	API 와 거의 같은 의미이지만 개발을 도와주는 다양한 도구( 유틸리티 )들을 제공하기도 한다.
+
+Framework :
+	지금까지 살펴본 도구들은 게임 개발을 도와주는 도우미로 실제 게임의 흐름에는 관여하지 않는다.
+	그래픽 라이브러리, 사운드 라이브러리 등과 같이 특정한 기능을 편리하게 만들 수 있게 도와줄 뿐이다.
+	하지만, 프레임워크는 개념이 약간 다르다. 이런 도구들을 모아서 다양한 앱을 만들 수 있도록 앱의 기본 흐름을 규정한다.
+	심지어 데이터에 사용할 파일 포멧 같은 경우도 프레임워크가 지정한 것을 사용해야만 한다.
+
+그래픽, 사운드와 같은 복잡한 기능들은 라이브러리나 SDK의 도움을 받고, 기본적인 초기화 해제 작업을 미리 작업해 두면
+그것이 바로 프레임워크가 된다.
+이렇게 프레임워크로 묶어두면 다음에 게임을 만들 때 매우 편리해 진다.
+*/
+
+/* Microsoft::WRL::ComPtr */
+
+// 프레임워크를 만들려면 뭔가 그럴듯 하게 만들고 싶은데 COM 오브젝트들은 C++ 객체와 생성/소멸 취급 방법이 다르니
+// 스마트포인터를 사용할 수가 없다.
+
+/*
+#define SAFE_RELEASE(p) { if ( (p) ) { (p)->Release(); (p) = 0; } }
+
+...
+
+SAFE_RELEASE(gpRadialBrush);
+
+#define 은 컴파일될 때 해당 내용을 바꿔치기 해주므로 간단히 위와 같이 사용할 수 있지만, 최근 추세는 define을 잘 사용하지 않는 분위기도 하니 다른 방법을 찾아 보자.
+*/
+
+// 마이크로소프트에서는 최신 트렌드에 맞게 COM 오브젝트에 대한 스마트 포인터 기능을 Windows 8.x SDK 부터 추가했는데 그것이 바로 ComPtr 이다.
+// Microsoft::WRL::ComPtr 은 COM 오브젝트에 대한 스마트 포인터 템플릿으로 Windows RunTime(WRT) C++ 프로그래밍에서 사용할 수 있다.
+// 순수 C++ 템플릿이기에 WRT 및 고대의 Win32 역시 그대로 사용이 가능하며 Windows 8 SDK 는 Windows 7과 하위호환도 되므로 안심하고 사용할 수 있다.
+// ComPtr은 std::shared_ptr 과 같은 방식으로 내부에서 참조 카운트를 가지고 있으며 여러곳에서 사용하다가 참조 카운트가 0 이 되면 해제되는 방식을 취하고 있다.
+
+/*
+#include <wrl.h>
+#include <wrl/client.h>
+
+<wrl.h> 를 포함하면 간단히 사용이 가능하다. <wrl.h> 에는 ComPtr 이외에도 많은 기능들이 들어 있기 때문에 좀 더 가볍게 사용하고 싶다면 <wrl/client.h>를 포함시키면 된다.
+
+Microsoft::WRL::ComPtr<T> variable;
+
+Microsoft::WRL::ComPtr<ID2D1Factory> mspD2DFactory{};
+*/
+
+/* 초기화 및 해제 */
+
+// 일반적으로 COM 객체는 팩토리 또는 헬퍼 함수를 통해서 생성되고, 매개변수로 인터페이스에 대한 포인터의 주소(**)를 넘겨주는 형태
+// ComPtr은 이런 특성을 GetAddressOf() 메서드를 제공한다.
+
+/*
+HRESULT hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, mspD2DFactory.GetAddressOf());
+만약 ComPtr 오브젝트를 클래스 멤버로 사용하고 있고, 이미 초기화가 되어 있는지 명확하지 않으면 안전하게 ReleaseAndGetAddressOf() 메서드를 사용할 수 있다.
+해제는 자동으로 이루어지지만 명시적으로 수행하고 싶을 떄는 Reset() 메서드를 사용하면 된다.
+mspD2DFactory.Reset();
+*/
+
+/* 메서드에서의 ComPtr */
+
+/*
+ComPtr 역시 자신의 인터페이스를 통해 메서드를 호출할 때는 일반 포인터와 동일하게 사용하면 된다.
+mspRenderTarget->BeginDraw();
+
+간혹 COM 오브젝트의 메서드 호출에서 COM 오브젝트의 포인터가 필요한 경우가 있다.
+hr = mspRenderTarget->CreateGradientStopCollection(
+	gradientStops.Get(),
+	2,
+	D2D1_GAMMA_2_2,
+	D2D1_EXTEND_MODE_CLAMP,
+	&pGradientStops
+	);
+단순히 mspRenderTarget->CreateGradientStopCollection(gradientStops, ... )를 호출해도 특별한 문제가 없다.
+하지만 위와 같이 명시적으로 Get()을 통해 포인터에 접근하는 것이 좋다.
+*/
+
+/*
+매개변수로 사용할 때는 주의해야 한다. 기본적으로 shared_ptr 방식이므로 그냥 넘겨주면 참조 카운트가 하나 증가해 버린다.
+이를 피하기 위해 다음과 같이 사용한다.
+void Func(const Microsoft::WRL::ComPtr<T>& param);
+또는
+void Func(T* param);
+*/
+
+/* 예외 처리 */
+
+/*
+#include <d2d1.h>
+#include <wrl/client.h>
+#include <exception>
+#include <stdio.h>
+
+class com_exception : public std::exception
+{
+public:
+	com_exception(HRESULT hr) : result(hr) {}
+
+	virtual const char* what() const override
+	{
+		static char str[64] = {};
+		sprintf_s(
+			str, "Failure with HRESULT of %08x",
+			static_cast<unsigned int>(result);
+		);
+		return str;
+	}
+
+private:
+	HRESULT result;
+};
+
+inline void ThrowIfFailed(HRESULT hr)
+{
+	if (FAILED(hr))
+	{
+		throw com_exception(hr);
+	}
+}
+
+com_exception 클래스는 멤버 변수로 HRESULT 를 가지고 있으며 생성자
+com_exception(HRESULT)와 오버라이드한 what() 멤버 함수로 되어 있는 간단한 클래스이다.
+그리고 클래스이긴 하지만 예외 처리에서 사용되는 구문과 통일하기 위해서 소문자로 만들었다.
+*/
+
+/*
+int WINAPI WinMain(_In_ HINSTANCE hInstance,
+	_In_opt_ HISNTANCE hPrevInstance,
+	_In_ LPSTR lpCmdLine,
+	_In_ int nShowCmd)
+{
+	...
+	try
+	{
+		myFramework.Init(hwnd);
+	}
+	catch (const com_exception& e)
+	{
+		static wchar_t wstr[64] = {};
+		size_t len;
+
+		mbstowcs_s(&len, wstr, e.what(), 64);
+		MessageBox(
+			nullptr, wstr, L"DirectX Exception",
+			MB_ICONEXCLAMATION | MB_OK
+		);
+	}
+	...
+}
+*/
+
+/* ----- 윈도우 헬퍼 ----- */
+
+/*
+WinMain() 함수는 다음과 같은 세가지로 구분할 수 있다.
+	1. 윈도우 생성
+		=> Init() 함수로 통합
+	2. 메시지 루프
+		=> GameLoop 함수로 통합
+	3. 윈도우 프로시저( 메시지 처리 )
+		=> 멤버함수로 만들어 클래스에 포함
+*/
+
+/* 윈도우 프로시져 */
+
+/*
+윈도우 생성에 필요한 인자들
+	HINSTANCE : WinMain 함수에서 인스턴스를 받아서 윈도우 생성
+	LPCWSTR : 윈도우 이름으로 캡션에 표기되는 문자열
+	윈도우 크기 : 윈도우의 크기를 지정할 때 사용
+*/
+
+/* ----- Direct2D 리소스 ----- */
+
+// 하드웨어의 성능을 활용한 그리기 API( Application Programming Interface )는 CPU 중심의 리소스들과 CPU에서도 잘 실행되는 그리기 명령들을 가지고 있으며 그 중 일부만 하드웨어 가속을 지원한다.
+// 왜냐하면 GPU는 제작사별로 성능이나 스펙이 다르기 때문에 하드웨어 가속 리소스를 사용하지 못하는 경우도 존재하므로 가능할 때는 GPU 리소스를 사용하고 그렇지 못하면 CPU의 리소스를 사용할 수 있어야 하기 때문이다.
+
+/*
+Direct2D 는 이러한 개념을 위해 리소스를 크게 2가지로 구분한다.
+	장치 독립적인 리소스( Device-Independent Resource )
+		ID2D1Factory 와 같이 CPU 에서 보관되는 리소스
+	장치 의존적인 리소스( Device-Dependent Resource )
+		ID2D1RenderTarget과 같이 GPU 에 보관되는 리소스
+		하드웨어 가속이 사용가능하다면 GPU 의 리소스에 매핑(연결)되어 빠른 그리기가 가능
+*/
+
+/* ----- 장치 손실( Device Lost ) ----- */
+
+// 이러한 하드웨어 가속 리소스는 빠르고 높은 품질이라는 장점 대신 CPU/RAM 에 비해 매우 한정적인 GPU/V-RAM 을 사용하다 보니 리소스 부족현상을 격게 된다.
+// ALT + TAB 으로 작업 전환을 하거나 시스템 윈도우가 만들어 질 때, 절전 모드가 작동하거나 전체화면 모드로 다른 앱이 실행되거나 등 그래픽에 민감한 작업을 할 경우 Device Lost 가 발생하게 된다.
+
+// 특히 게임은 엄청난 GPU/V-RAM 을 사용하므로 이런 현상이 자주 발생한다. 이런 장치 손실이 발생하면, 장치 의존적인 리소스는 아무것도 사용할 수 없는 상태가 되기 때문에 기존 리소스들은 모두 해제하고 다시 만들어야 한다.
+
+/*
+하지만 DirectX11 이후가 되면서 마이크로소프트에서 이런 불편함을 해소할 기능을 추가했다.
+가상 그래픽 디바이스 인터페이스라는 개념을 사용하여 여러 개의 앱이 하나의 장치를 사용해도 문제가 없도록 개선했기 때문에 거의 발생하지 않는다.
+하지만, 실제 물리적인 장치와 연결이 끊어지는 다음과 같은 경우는 어쩔 수 없이 장치 손실이 발생한다.
+	그래픽 카드 드라이버 업그레이드
+	절전용 그래픽카드에서 고성능 그래픽 카드로 변경될 때
+		=> 요즘은 CPU에 내장 그래픽카드가 달린 경우가 많다. 성능이 당연히 떨어지므로 게임은 별도의 그래픽카드를 사용하는 형태 등으로 두 그래픽카드가 스위칭 되는 경우다.
+	실제 장치가 응답이 없을 경우
+	외장 그래픽카드( USB 등 )가 실제로 제거되거나 추가될 때
+*/
+
+// DirectX11 이전 버전 역시 위 같은 경우는 발생한다. 하지만 기존과 달리 ALT + TAB 등의 작업 전환에서는 장치 손실이 발생하지 않아, 매우 안정적인 게임을 만들 수 있게 되었다.
+// Direct2D 에서는 장치 손실을 체크할 수 있는 시점은 모든 그리기가 끝나서 화면에 표시하는 시점, 즉 ID2D1HwndRenderTarget:EndDraw() 함수의 반환값으로 알 수 있다.
+// 이 반환값이 S_OK 아니라면 장치 손실에 대한 처리를 해야 한다.
