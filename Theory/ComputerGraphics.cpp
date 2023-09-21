@@ -242,3 +242,271 @@ Application		 FrameBuffer
 24비트( 예전에는 256 칼라와 비교하면 혁신이라 true color 라고도 했다. )이상에서는 그럴 필요가 없이 필셀마다 직접 색상을 표현할 수 있게 되었다.
 */
 
+/* ----- WIC( Windows Imaging Component ) ----- */
+
+/* BMP 파일 불러와서 그리기 */
+
+// 이미지는 픽셀로 이루어진 배열이며 이 정보를 파일로 저장한 것을 jpg, png 와 같은 그림파일이다.
+// BMP 포멧은 픽셀 데이터를 배열로 저장하고 있기 때문에 간단하다.
+
+/*
+BMP 파일 구조
+
+[이름]			[타입]				[설명]
+BMP 헤더		BITMAPFILEHEADER	BMP 파일에 대한 정보
+비트맵 정보		BITMAPINFOHEADER	BITMAP 구조에 대한 상세 정보
+팔레트			LOGPALETTE			팔레트 인덱스와 색상에 대한 배열
+비트맵 데이터	void *				실제 픽셀 배열
+*/
+
+/*
+BITMAPFILEHEADER
+
+WORD bfType : 파일 타입이다. 무조건 BM이 되어야 한다.
+	=> ( 0x4D42 - B : 42, M : 4D 이지만 엔디언으로 인해 바뀌는 점 주의 )
+DWORD bfSize : BMP 파일의 크기( byte )
+WORD bfReserved1 : 예약 공간1
+WORD bfReserved2 : 예약 공간2
+DWORD bfOffBits : 비트맵 데이터가 있는 주소에 대한 오프셋
+*/
+
+/*
+BITMAPINFOHEADER
+
+DWORD biSize : 헤더의 크기( byte )
+LONG biWidth : 비트맵 가로
+LONG biHeigh : 비트맵 세로
+WORD biPlanes : 1로 고정
+WORD biBitCount : 1픽셀에 사용되는 비트 수( 1, 8, 16, 32 주로 사용 )
+DWORD biCompression : 압축방식
+DWORD biSizeImage : 비트맵의 크기
+LONG biXPelsPerMeter : 미터당 가로 화소 수
+LONG biYPelsPerMeter : 미터당 세로 화소 수
+DWORD biClrUsed : 팔레트의 색상 수
+DWORD biClrImportant : 무시
+*/
+
+/*
+1. BMP 파일 열기
+2. BITMAPFILEHEADER 읽기
+3. BITMAPINFOHEADER 읽기
+4. BITMAPFILEHEADER 의 bfOffBits 만큼 건너 뛰기
+5. 픽셀 데이터 읽기
+*/
+
+/*
+#include "D2DFramework.h"
+
+class ImageExample : public D2DFramework
+{
+	Microsoft::WRL::ComPtr<ID2D1Bitmap> mspBitmap;
+
+public:
+	virtual HRESULT Initialize(HINSTANCE hInstance,
+		LPCWSTR title = L"Direct2D Example",
+		UINT width = 1024,
+		UINT height = 768) override;
+	void Render() override;
+
+public:
+	HRESULT LoadBMP(LPCWSTR filename, ID2D1Bitmap** ppBitmap);
+};
+
+Microsoft::WRL::ComPtr<ID2D1Bitmap> mspBitmap;
+	BMP 파일을 읽어올 ID2D1Bitmap 인터페이스를 추가한다.
+HRESULT LoadBMP(LPCWSTR filename, ID2D1Bitmap** ppBitmap);
+	반환값으로는 HRESULT 를 사용하고, Bitmap 인터페이스에 대한 포인터의 주소를 받아서 오브젝트를 생성한다.
+	포인터의 포인터를 사용하는 이유를 다시 한 번 정리해 보면 다음과 같다.
+		일반 변수를 매개변수로 받아서 값을 수정할 때 - 변수의 주소값이 필요
+		포인터 변수를 매개변수로 받아서 값을 수정할 때 - 포인터 변수의 주소값이 필요
+*/
+
+/*
+HRESULT ImageExample::LoadBMP(LPCWSTR filename, ID2D1Bitmap** ppBitmap)
+{
+	std::ifstream file;
+	file.open("Data/32.bmp", std::ios::binary);
+
+	BITMAPFILEHEADER bmh;
+	BITMAPINFOHEADER bmi;
+
+	file.read(reinterpret_cast<char*>(&bmh), sizeof(BITMAPFILEHEADER));
+	file.read(reinterpret_cast<char*>(&bmi), sizeof(BITMAPINFOHEADER));
+	if (bmh.bfType != 0x4D42)
+	{
+		return E_FAIL;
+	}
+	if (bmi.biBitCount != 32)
+	{
+		return E_FAIL;
+	}
+
+	std::vector<char> pPixels(bmi.biSizeImage);
+	file.seekg(bmh.bfOffBits);
+	file.read(&pPixels[0], bmi.biSizeImage);
+
+	int pitch = bmi.biWidth * (bmi.biBitCount / 8);
+
+	file.close();
+
+	HRESULT hr = mspRenderTarget->CreateBitmap(
+		D2D1::SizeU(bmi.biWidth, bmi.biHeight),
+		D2D1::BitmapProperties(
+			D2D1::PixelFormat(
+				DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE
+			)
+		),
+		ppBitmap
+	);
+
+	ThrowIfFailed(hr);
+
+	(*ppBitmap)->CopyFromMemory(
+		nullptr,
+		&pPixels[0],
+		pitch
+	);
+	return S_OK;
+}
+
+1. 파일 읽기
+	a. ifstream 을 사용하여 binary 모드를 열은다.
+2. 파일 헤더 읽기
+	a. BITMAPFILEHEADER 구조체로 읽어 오면 편하다.
+	b. ifstream.read() 는 char* 를 매개변수로 넘겨줘야 한다.
+	c. 따라서 reinterpret_cast 를 사용하여 구조체를 char* 로 변환하였다.
+3. 비트맵 헤더 읽기
+	a. BITMAPINFORHEADER 구조체로 읽어 오면 편하다.
+	b. 헤더를 읽어 오면 비트맵 기본 정보를 알 수 있으므로 잘못된 파일은 걸러 준다.
+4. 픽셀로 건너뛰기
+	a. ifstream.seek() 을 사용하면 바이트 단위로 이동이 가능하다.
+	b. 헤더의 bfOffBits 에 실제 픽셀에 대한 위치가 저장되어 있다.
+5. 비트맵 읽기
+	a. 비트맵을 저장할 공간으로 std::vector<char>를 사용했다.
+		i. 크기는 비트맵 헤더의 biSizeImage 값이다.
+	b. istream.read() 는 char* 를 받기 때문에 std::vector 에서 잔재주를 부려야 한다.
+		i. std::vector 의 내부 자료형을 순차적
+		ii. 따라서 첫 번째 우너소의 주소를 얻어오면 char* 와 같은 형이 된다.
+6. 비트맵 생성
+	a. ID2D1HwndRenderTarget::CreateBitmap 을 사용해 비트맵 인터페이스를 생성한다.
+		i. 지난 예제의 프레임 버퍼 생성과 유사한다.
+		ii. RGBA 원소들의 저장 순서는 BGRA 이다.
+
+주의할 점은 std::vector 를 포인터로 변경하는 방식이다.
+사실 BITMAP 은 조금 더 복잡한 구조이다. 헤더에서 압축 여부나 RGBA 포멧 정보등을 읽어 서 그에 맞게 파일을 읽어야 하지만,
+여기에서는 주어진 파일에 대한 것만 처리했다.
+기본적으로 BMP 파일은 Bottom-Up 으로 저장한다. 가끔 BITMAP 헤더에 biHeight 가 음수인 경우가 있는데 이 경우는 Top-Down 방식이다.
+*/
+
+/*
+뒤집힌 이미지, pitch 단위로 읽어서 올바른 위치( 역순 )에 저장하면 된다.
+HRESULT ImageExample::LoadBMP(LPCWSTR filename, ID2D1Bitmap** ppBitmap)
+{
+	...
+	file.seekg(bmh.bfOffBits);
+
+	int pitch = bmi.biWidth * (bmi.biBitCount / 8);
+	for (int y = bmi.biHeight - 1; y >= 0; y--)
+	{
+		file.read(&pPixels[y * pitch], pitch);
+	}
+	file.close();
+	...
+}
+*/
+
+/*
+BMP 를 그릴 때 배경을 제거하고 그려보자
+	배경색 RGM 30, 199, 250
+	모든 픽셀을 수동으로 읽어서 배경색과 같으면 투명하게 만들어 주면 된다.
+		한 바이트씩 전체 비트맵을 읽어 오는 코딩 작성
+		읽어온 색상이 배경색과 같으면 RGBA를 모두 0으로 만든다.
+		LoadBMP() 의 비트맵 생성에서 다음 속성을 변경해 줘야 한다.
+HRESULT hr = mspRenderTarget->CreateBitmap(
+	D2D1::SizeU(bmi.biWidth, bmi.biHeight),
+	D2D1::BitmapProperties(
+		D2D1::PixelFormat(
+			DXGI_FORMAT_B8G8R8A8_UNORM,
+			D2D1_ALPHA_MODE_PREMULTIPLIED
+		)
+	),
+	ppBitmap
+);
+*/
+
+/*
+HRESULT ImageExample::LoadBMP(LPCWSTR filename, ID2D1Bitmap** ppBitmap)
+{
+	1. 파일 열기
+	std::ifstream file;
+	file.open("Data/32.bmp", std::ios::binary);
+
+	BITMAPFILEHEADER bmh;
+	BITMAPINFOHEADER bmi;
+
+	2. BITMAPFILEHEADER 읽기
+	file.read(reinterpret_cast<char*>(&bmh), sizeof(BITMAPFILEHEADER));
+	3. BITMAPINFOHEADER 읽기
+	file.read(reinterpret_cast<char*>(&bmi), sizeof(BITMAPINFOHEADER));
+	if (bmh.bfType != 0x4D42)
+	{
+		return E_FAIL;
+	}
+	if (bmi.biBitCount != 32)
+	{
+		return E_FAIL;
+	}
+
+	std::vector<char> pPixels(bmi.biSizeImage);
+	4. 픽셀로 건너뛰기
+	file.seekg(bmh.biOffBits);
+	5. 비트맵 읽기
+	int pitch = bmi.biWidth * (bmi.biBitCount / 8);
+	int index{};
+
+	for (int y = bmi.biHeight - 1; y >= 0; y--)
+	{
+		index = y * pitch;
+		for (int x = 0; x < bmi.biWidth; x++)
+		{
+			char r{}, g{}, b{}, a{};
+
+			file.read(&b, 1);
+			file.read(&g, 1);
+			file.read(&r, 1);
+			file.read(&a, 1);
+
+			if (r == 30 || g == 199 || r == 250)
+			{
+				r = g = b = a = 0;
+			}
+
+			pPixels[index++] = b;
+			pPixels[index++] = g;
+			pPixels[index++] = r;
+			pPixels[index++] = a;
+		}
+	}
+
+	file.close();
+
+	HRESULT hr = mspRenderTarget->CreateBitmap(
+		D2D1::SizeU(bmi.biWidth, bmi.biHeight),
+		D2D1::BitmapProperties(
+			D2D1::PixelFormat(
+				DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED
+			)
+		),
+		ppBitmap
+	);
+
+	ThrowIfFailed(hr);
+
+	(*ppBitmap)->CopyFromMemory(
+		nullptr,
+		&pPixels[0],
+		pitch
+	);
+	return S_OK;
+}
+*/
