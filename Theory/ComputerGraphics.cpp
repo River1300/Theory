@@ -510,3 +510,170 @@ HRESULT ImageExample::LoadBMP(LPCWSTR filename, ID2D1Bitmap** ppBitmap)
 	return S_OK;
 }
 */
+
+/* Windows Imaging Component */
+
+// 위 예제에서 구현한 비트맵 로딩 함수는 실전에서는 사용하기 어렵다. BMP 포멧은 용량도 클 뿐 아니라, 완벽하게 구현하지
+// 않아서 못 읽는 경우가 더 많다. png 와 같은 포멧들은 압축 해제 방식 떄문에 구현하기 매우 어렵다.
+
+// 마이크로소프트에서는 윈도우 시스템 개발자들을 위해 디지털 이미지들을 위해 저수준( low-level ) API 를 추가해 주었다.
+// Windows Imaging Component 는 Windows Vista 부터 포함되어 있으며 Windows XP 이하는 추가로 설치하면 사용이 가능하다.
+
+/*
+#include <wincodec.h>
+#include "D2DFramework.h"
+
+class ImageExample : public D2DFramework
+{
+	Microsoft::WRL::ComPtr<IWICImagingFactory> mspWICFactory;
+	Microsoft::WRL::ComPtr<ID2D1Bitmap> mspBitmap;
+
+public:
+	virtual HRESULT Initialize(HINSTANCE hInstance,
+		LPCWSTR title = L"Direct2D Example",
+		UINT width = 1024,
+		UINT height = 768) override;
+	void Render() override;
+
+public:
+	void Release() override;
+
+	public HRESULT LoadBMP(LPCWSTR filename, ID2D1Bitmap** ppBitmap);
+	HRESILT LoadWICImage(LPCWSTR filename, ID2D1Bitmap** ppBitmap);
+};
+
+WIC 를 사용하기 위해서는 wincodec.h 를 포함시켜야 한다. WIC 역시 팩토리 패턴이라 팩토리를 위한 스마트 포인터를 멤버로 선언하고, 개별적인 해제가 필요하므로 Release 를 오버라이딩 했다.
+기존 함수와 구분하기 위해서 WIC를 사용한 파일 읽기용으로 LoadWICImage 멤버함수도 추가했다.
+*/
+
+/*
+#include <fstream>
+#include <vector>
+#include "ImageExample.h"
+
+#pragma comment( lib, "WindowsCodecs.lib" )
+
+HRESULT ImageExample::Initialize(HINSTANCE hInstance, LPCWSTR title, UINT width, UINT height)
+{
+	CoInitialize(nullptr);
+	HRESULT hr = ::CoCreateInstance(CLSID_WICImagingFactory,
+		nullptr,
+		CLSCTX_INPROC_SERVER,
+		IID_PPV_ARGS(mspWICFactory.GetAddressOf()));
+
+	D2DFramework::Initialize(hInstance, title, width, height);
+
+	LoadWICImage(L"Data/32.bmp", mspBitmap.GetAddressOf());
+
+	return S_OK;
+}
+
+void ImageExample::Release()
+{
+	D2DFramework::Release();
+
+	mspWICFactory.ReleaseAndGetAddressOf();
+
+	CoUninitialize();
+}
+
+#pragma comment( lib, "WindowsCodecs.lib" ) : Direct2D 와 마찬가지로 사용할 라이브러리 WindowsCodecs.lib 를 병합시켜 준다.
+
+CoInitialize(nullptr); : COM 오브젝트를 사용하기 위해 시스템을 초기화 한다.
+	DirectX 도 COM 을 사용한다고 했는데, 초기화를 불러 준 적은 없다. DirectX 는 COM 환셩을 100% 사용하지 않고
+	개념만 일부 사용하는 형식을 취하고 있다.
+	다른 플랫폼으로의 확장을 위해 윈도우 전용의 COM 시스템을 사용할 수 없었을 것이다. 하지만 WIC 는 이름 그대로
+	윈도우 전용 환경이므로 COM 을 완벽하게 적용해야만 한다.
+
+HRESULT CoCreateInstance()
+	REFCLSID rclsid Reference to Class ID, 생성할 오브젝트의 클래스 구분자
+	LPUNKNOWN pUnkOuter 집합체( aggregate object )를 위한 포인터, nullptr 을 넘기면 집합체가 아닌 단일 개체로 생성한다.
+	DWORD dwClsContxt Class Context, 생성된 객체가 실행되는 환경을 지정한다.
+	REFIID riid Refernce to interface ID
+	LPVOID *ppv riid로 지정한 인터페이스 포인터에 대한 주소로 생성된 인터페이스 포인터를 돌려 준다.
+
+매개변수는 5개를 요구하지만 인자는 4개만 줄 수 있다. IID_PPV_ARGS() 는 매크로로 내부에서 2개의 매개변수를 넘겨 준다.
+두 개 모두 명시해도 되지만, riid는 우리가 선언한 mspWICFactory로 부터 유추할 수 있기 때문에 코딩 몇 줄 줄이기 위해 사용하는 것이다.
+풀어서 쓰면 IID_IWICImaginaFactory, mspWICFactory.GetAddressOf() 로 넘겨주면 된다.
+*/
+
+/*
+파일 읽기
+	1. 디코더 생성
+	2. 디코더에서 프레임(frame) 획득
+	3. 컨버터(Converter)를 사용해 데이터를 변환
+	4. 변환된 데이터에서 비트맵 생성
+*/
+
+/*
+HRESULT ImageExample::LoadWICImage(LPCWSTR filename, ID2D1Bitmap** ppBitmap)
+{
+	Mircrosoft::WRL::ComPtr<IWICBitmapDecoder> bitmapDecoder;
+	HRESULT hr{};
+
+	hr = mspWICFactory->CreateDecoderFromFilename(
+		filename,
+		nullptr,
+		GENERIC_READ,
+		WICDecoderMetadataCacheOnLoad,
+		BitmapDecoder.GetAddressof());
+	ThorwIfFailed(hr);
+
+	Microsoft::WRL::ComPtr<IWICBitmapFrameDecode> frame;
+	ThrowIfFailed(bitmapDecoder->GetFrame(0, frame.GetAddressOf()));
+
+	return S_OK;
+}
+
+HRESULT IWICImagingFactory::CreateDecoderFromFilename()
+	LPCWSTR wzFilename null-terminated wide char string
+	const GUID *pguidVendor Globally Unique Identifider ( 절대 중복되지 않는 고유한 난수로 자주 보게됨 )
+		고유의 포멧을 가진 회사 별 고유의 디코더를 지정할 수 있다.
+	DWORD dwDesiredAccess 읽기,쓰기,읽기쓰기 등의 파일 접근 방식을 지정한다.
+	WICDecodeOptions metadataOptions 메타 데이터 옵션이다.
+		데이터를 설명하기 위한 데이터로 meta는 ~에 대한 이라는 의미이다. 이미지는 단순한 픽셀 데이터지만,
+		gif와 같이 여러 장이 모여 있는 경우도 있다. 이러한 픽셀 데이터에 대한 추가 데이터가 메타 데이터가 되는 것이다.
+		캐시를 할 것인지, 바로 로딩할 것인지를 정한다.
+	IWICBitmapDecoder **ppIDecoder 생성된 디코더를 담을 포인터 주소
+
+HRESULT IWICBitmapFrameDecode::GetFrame()
+	IWICBitmapFrameDecode **ppIBitmapFrame 디코딩된 프레임을 담을 포인터의 주소이다.
+*/
+
+/*
+HRESULT ImageExample::LoadWICImag(LPCWSTR filename, ID2D1Bitmap** ppBitmap)
+{
+	...
+	// 포멧 컨버터
+	Microsoft::WRL::ComPtr<IWICFormatConverter> converter;
+	ThrowIfFailed(mspWICFactory->CreateFormatConverter(converter.GetAddressOf()));
+
+	hr = converter->Initialize(
+		frame.Get(),
+		GUID_WICPixelFormat32bppPBGRA,
+		WICBitmapDitherTypeNone,
+		nullptr,
+		0,
+		WICBitmapPaletteTypeCustom);
+	ThrowIfFailed(hr);
+
+	hr = mspRenderTarget->CreateBitmapFromWicBitmap(
+		converter.Get(),
+		mspBitmap.ReleaseAndGetAddressOf());
+	ThrowIfFailed(hr);
+
+	return S_OK;
+}
+
+HRESULT IWICImagingFactory::CreateFormatConverter():
+	IWICFormatConverter **ppIFormatConverter 생성된 컨버터를 담을 포인터의 주소이다.
+
+HRESULT IWICFromatConverter::Initialize()
+	IWICBitmapSource *pISource 변환할 비트맵을 지정한다. 디코딩한 프레임을 넘겨주면 된다.
+	REFWICPixelFormatGUID dstFormat 변환 후의 픽셀 포멧을 지정한다.
+	WICBitmapDitherType dither 디더링 타입을 지정한다.
+		컴퓨터는 현실 세계 보다 표현할 수 있는 색상이 제한적이기 때문에 점과 점을 패턴으로 연결하는 편법을 사용한다.
+	IWICPalette *pIPalette 변환에 적용할 때 사용할 색상 팔레트를 지정한다.
+	double alphaThresholdPercent 알파값의 임계점을 지정한다. 가령 알파가 25미만인 픽셀을 모두 투명하게 만들거나 할 수 있다.
+	WICBitmapPaletteType paletteTranslate 변환에 사용할 팔레트 타입을 지정한다.
+*/
